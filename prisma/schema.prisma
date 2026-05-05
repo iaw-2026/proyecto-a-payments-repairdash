@@ -1,0 +1,76 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TransactionStatus {
+  PENDING
+  RESERVED
+  LIQUIDATED
+  DISPUTED
+  REFUNDED
+}
+
+model User {
+  clerkId   String @id
+  email     String @unique
+  fullName  String
+  role      String
+  cliente   Cliente?
+  trabajador Trabajador?
+}
+
+model Cliente {
+  clerkId String @id
+  user    User   @relation(fields: [clerkId], references: [clerkId])
+}
+
+model Trabajador {
+  clerkId      String  @id
+  cbuCvu       String
+  user         User    @relation(fields: [clerkId], references: [clerkId])
+  balance      Balance?
+  withdrawals  Withdrawal[]
+}
+
+model Transaction {
+  id              String            @id
+  amount          Decimal           @db.Decimal(12,2)
+  status          TransactionStatus
+  clientId        String
+  trabajadorId    String
+  gatewayPaymentId String?
+  createdAt       DateTime          @default(now())
+}
+
+model Balance {
+  trabajadorId      String   @id
+  trabajador        Trabajador @relation(fields: [trabajadorId], references: [clerkId])
+  balanceAvailable  Decimal  @db.Decimal(12,2)
+  balanceLocked     Decimal  @db.Decimal(12,2)
+  updatedAt         DateTime @updatedAt
+}
+
+enum WithdrawalStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+}
+
+model Withdrawal {
+  id            String            @id
+  trabajadorId  String
+  amount        Decimal           @db.Decimal(12,2)
+  status        WithdrawalStatus  @default(REQUESTED)
+  createdAt     DateTime          @default(now())
+  trabajador    Trabajador        @relation(fields: [trabajadorId], references: [clerkId])
+}
