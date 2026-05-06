@@ -106,25 +106,25 @@ export async function getWithdrawals(
   const { clerkId } = await getAuthUser();
 
   // Asegurar valores mínimos válidos
-  const safePage = Math.max(1, Math.floor(page));
   const safePageSize = Math.max(1, Math.min(50, Math.floor(pageSize)));
 
-  const skip = (safePage - 1) * safePageSize;
-
-  // Ejecutar ambas queries en paralelo para eficiencia
-  const [items, totalCount] = await Promise.all([
-    prisma.withdrawal.findMany({
-      where: { trabajadorId: clerkId },
-      orderBy: { createdAt: "desc" },
-      skip,
-      take: safePageSize,
-    }),
-    prisma.withdrawal.count({
-      where: { trabajadorId: clerkId },
-    }),
-  ]);
+  // Primero obtener el total para poder clampear la página
+  const totalCount = await prisma.withdrawal.count({
+    where: { trabajadorId: clerkId },
+  });
 
   const totalPages = Math.max(1, Math.ceil(totalCount / safePageSize));
+
+  // Si el usuario pide una página que excede el total, lo mandamos a la última
+  const safePage = Math.min(Math.max(1, Math.floor(page)), totalPages);
+  const skip = (safePage - 1) * safePageSize;
+
+  const items = await prisma.withdrawal.findMany({
+    where: { trabajadorId: clerkId },
+    orderBy: { createdAt: "desc" },
+    skip,
+    take: safePageSize,
+  });
 
   return {
     items,
