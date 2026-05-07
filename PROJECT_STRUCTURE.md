@@ -1,140 +1,149 @@
-# Estructura del Proyecto Reorganizada
+# Estructura del Proyecto — Repairdash Payments
 
-## ✅ Reorganización Completada
-
-El proyecto ha sido reorganizado de una estructura plana a una arquitectura modular y escalable, lista para la extensión de features en semanas siguientes.
-
-## 📁 Estructura de Directorios
+## 📁 Árbol de Directorios
 
 ```
-src/
-├── app/                          # Next.js App Router
-│   ├── globals.css              # Estilos globales
-│   ├── layout.tsx               # Root layout con AppHeader
-│   ├── page.tsx                 # Home page
-│   ├── rider/
-│   │   └── page.tsx             # Dashboard del cliente (viewer)
+app/
+├── layout.tsx                       # Root layout (fonts, Toaster)
+├── globals.css                      # Design tokens (purple/magenta theme)
+├── page.tsx                         # Landing / home
+├── (app)/                           # Route group autenticado
+│   ├── layout.tsx                   # Wrapper compartido
 │   ├── driver/
-│   │   └── page.tsx             # Dashboard del trabajador (viewer)
-│   └── api/
-│       └── payments/
-│           ├── checkout         # POST: crear transacción
-│           ├── [transactionId]/estado  # GET: estado de transacción
-│           ├── wallet/[trabajadorId]   # GET: saldo del trabajador
-│           └── retiro           # POST: solicitar retiro
-│
-├── components/                  # Componentes React organizados
-│   ├── index.ts                # Barril export principal
-│   ├── layout/                 # Componentes de layout
-│   │   ├── index.ts
-│   │   └── AppHeader.tsx       # Header navegable (extraído de layout.tsx)
-│   ├── ui/                     # Componentes UI reutilizables
-│   │   └── index.ts            # TODO: Button, Card, Badge, etc.
-│   └── payments/               # Componentes específicos de pagos
-│       └── index.ts            # TODO: CheckoutForm, TransactionTable, etc.
-│
-├── lib/                         # Utilidades y servicios
-│   ├── prisma.ts               # Cliente Prisma singleton (PostgreSQL)
-│   ├── auth.ts                 # Auth utilities (placeholder Week 2)
-│   ├── services/               # Capas de lógica de negocio
-│   │   ├── index.ts
-│   │   ├── transactions.ts     # Crear y transicionar transacciones
-│   │   ├── balances.ts         # Operaciones de saldo
-│   │   └── withdrawals.ts      # Solicitudes de retiro
-│   ├── validations/            # Esquemas de validación
-│   │   ├── index.ts
-│   │   ├── checkout.ts         # Validar entrada de checkout
-│   │   └── withdrawal.ts       # Validar entrada de retiro
-│   └── integrations/           # Integraciones externas
-│       ├── index.ts
-│       └── mercado-pago.ts     # Mercado Pago API (placeholder Week 2)
-│
-└── tests/                       # Archivos de test
-    └── (placeholder)
+│   │   ├── layout.tsx               # Sidebar + MobileBottomNav
+│   │   ├── page.tsx                 # Dashboard (balance, gráfico, retiro rápido)
+│   │   ├── withdrawals/
+│   │   │   ├── page.tsx             # Historial de retiros (paginación server-side)
+│   │   │   └── loading.tsx          # Skeleton de tabla
+│   │   └── liquidations/
+│   │       └── page.tsx             # Placeholder
+│   ├── rider/                       # Placeholder
+│   ├── admin/                       # Placeholder
+│   └── dashboard/                   # Placeholder
+├── actions/
+│   └── withdrawals.ts               # Server Action: solicitar retiro
+├── api/
+│   └── payments/                    # API routes (placeholders)
+├── sign-in/                         # Auth pages (placeholder)
+└── sign-up/
+
+components/
+├── driver/                          # Componentes del dominio Driver
+│   ├── BalanceCards.tsx              # Tarjetas de saldo (available, locked, earned)
+│   ├── IncomeChart.tsx              # Gráfico de ingresos (Recharts)
+│   ├── QuickWithdrawalAction.tsx    # Card con botón de retiro rápido
+│   ├── WithdrawalModal.tsx          # Modal para confirmar retiro
+│   └── WithdrawalTable.tsx          # Tabla de historial de retiros
+├── layout/                          # Shell de la app
+│   ├── Topbar.tsx                   # Barra superior
+│   ├── DriverSidebar.tsx            # Sidebar desktop
+│   ├── MobileBottomNav.tsx          # Nav inferior mobile
+│   └── RoleNav.tsx                  # Navegación por rol
+├── ui/                              # Componentes genéricos reutilizables
+│   ├── Button.tsx
+│   ├── Card.tsx
+│   ├── Modal.tsx
+│   ├── MetricCard.tsx
+│   ├── PaginationControls.tsx       # Paginación con searchParams
+│   ├── EmptyState.tsx
+│   └── StatusBadge.tsx
+└── payments/                        # Placeholder
+
+lib/
+├── prisma.ts                        # Cliente Prisma singleton
+├── mock-auth.ts                     # Mock de Clerk (devuelve user_driver_1)
+├── auth.ts                          # Placeholder Clerk
+├── money.ts                         # Utilidades de formato monetario
+├── errors.ts                        # Helpers de error
+├── services/                        # Lógica de negocio (ver abajo)
+│   ├── withdrawals.ts
+│   ├── balances.ts
+│   ├── transactions.ts
+│   └── users.ts
+├── mocks/                           # Datos mock para desarrollo
+├── validations/                     # Esquemas de validación
+├── integrations/                    # Mercado Pago (placeholder)
+└── types/                           # Tipos auxiliares
 
 prisma/
-├── schema.prisma              # Modelos Prisma (User, Transaction, Balance, etc.)
-└── seed.ts                    # Poblador de datos de demostración
-
-config files (root):
-├── next.config.ts
-├── tsconfig.json             # Path alias @/* -> ./src/*
-├── tailwind.config.ts
-├── postcss.config.mjs
-├── eslint.config.mjs
-├── prisma.config.ts          # Seed runner config
-└── package.json
-
-docs:
-├── AGENTS.md                 # Guía para agents
-├── CLAUDE.md                 # Referencias de Claude
-└── PROJECT_STRUCTURE.md      # Este archivo
+├── schema.prisma                    # Fuente de verdad de los modelos
+└── seed.ts                          # Datos iniciales de desarrollo
 ```
 
-## 🔑 Cambios Principales
+---
 
-### 1. **Componentes Extraídos**
-   - `src/components/layout/AppHeader.tsx` - Header navegable (antes inline en layout.tsx)
-   - Estructura preparada para: UI components, Payment domain components
+## 🧠 Arquitectura de Capas
 
-### 2. **Servicios de Negocio**
-   - `src/lib/services/transactions.ts` - CRUD y transiciones de transacciones
-   - `src/lib/services/balances.ts` - Operaciones de saldo y validaciones
-   - `src/lib/services/withdrawals.ts` - Gestión de retiros
+### `lib/services/` — Lógica de Negocio
 
-### 3. **Validaciones**
-   - `src/lib/validations/checkout.ts` - Esquemas de checkout (TODO: Zod Week 2)
-   - `src/lib/validations/withdrawal.ts` - Esquemas de retiro
+Contiene las funciones que hablan directamente con la base de datos vía Prisma. **No conocen nada de Next.js** (ni rutas, ni formularios, ni auth). Son puras y reutilizables.
 
-### 4. **Autenticación**
-   - `src/lib/auth.ts` - Placeholder para integración Clerk (Week 2)
+| Responsabilidad | Ejemplo |
+|---|---|
+| Queries con Prisma (`findMany`, `count`) | `getWithdrawals(page, pageSize)` |
+| Transacciones atómicas (`$transaction`) | `createWithdrawalRequest(clerkId, amount)` |
+| Validaciones de negocio | Verificar saldo suficiente |
+| Aritmética con `Decimal` | Debitar balance sin errores de redondeo |
 
-### 5. **Integraciones**
-   - `src/lib/integrations/mercado-pago.ts` - Placeholder para API MP (Week 2)
+### `app/actions/` — Server Actions
 
-## ✨ Beneficios de esta Estructura
+Actúan como **puente entre la UI y los services**. Se invocan desde formularios o botones del cliente.
 
-1. **Separación de Responsabilidades**
-   - `components/` - Presentación
-   - `lib/services/` - Lógica de negocio
-   - `lib/validations/` - Validación de datos
-   - `lib/integrations/` - Acceso a sistemas externos
+| Responsabilidad | Ejemplo |
+|---|---|
+| Obtener el usuario autenticado | `getAuthUser()` |
+| Validar inputs del formulario | Verificar que el monto sea positivo |
+| Llamar a uno o más services | `createWithdrawalRequest(...)` |
+| `revalidatePath` / `redirect` | Refrescar el dashboard post-retiro |
+| Mapear errores técnicos → mensajes UI | `INSUFFICIENT_BALANCE` → "Saldo insuficiente" |
 
-2. **Escalabilidad**
-   - Fácil agregar nuevas páginas en `app/`
-   - Reutilizar servicios desde cualquier ruta
-   - Crecer el árbol de componentes sin conflictos
+### `components/` — Presentación
 
-3. **Testabilidad**
-   - Servicios aislados y puro funcionales
-   - Componentes independientes
-   - Ready para unit + integration tests
+| Carpeta | Qué contiene |
+|---|---|
+| `components/driver/` | Componentes específicos del dominio Driver |
+| `components/ui/` | Componentes genéricos reutilizables en cualquier vista |
+| `components/layout/` | Shell de la app (sidebar, topbar, nav) |
 
-4. **Path Aliases**
-   - Imports limpios: `@/lib/services`, `@/components/layout`, etc.
-   - Refactoring seguro sin rutas relativas
+### Tipos
 
-## 🚀 Próximos Pasos (Week 2+)
+Los tipos de los modelos de base de datos se importan **siempre** desde Prisma Client generado:
 
-- [ ] Integrar Clerk en `lib/auth.ts` y middleware
-- [ ] Completar API Mercado Pago en `lib/integrations/mercado-pago.ts`
-- [ ] Agregar validaciones Zod en `lib/validations/`
-- [ ] Crear componentes UI en `components/ui/`
-- [ ] Crear componentes de dominio en `components/payments/`
-- [ ] Agregar rutas admin en `app/admin/`
-- [ ] Setup de tests en `src/tests/`
-
-## ✅ Status de Build
-
-- **TypeScript**: ✓ Compila exitosamente
-- **Routes**: ✓ Todas las rutas reconocidas
-- **Imports**: ✓ Path aliases funcionando
-- **Prisma**: ✓ Cliente singleton listo
-- **Seed**: ✓ Ready para reproducir datos
-
+```typescript
+import { Withdrawal, WithdrawalStatus } from "@/generated/prisma";
 ```
-✓ Compiled successfully
-✓ Finished TypeScript in 1615ms    
-✓ Collecting page data using 11 workers
-✓ Generating static pages using 8 routes
-```
+
+No se crean interfaces manuales que dupliquen modelos de la DB (`AGENTS.md` Rule 1).
+
+---
+
+## 🚗 Driver — Estado Actual
+
+### Dashboard (`/driver`)
+- Tarjetas de balance (disponible, reservado, ganado este mes).
+- Gráfico de ingresos mensuales con Recharts.
+- Botón de retiro rápido → abre `WithdrawalModal` → ejecuta Server Action.
+
+### Historial de Retiros (`/driver/withdrawals`)
+- Tabla con paginación **server-side** (`skip`/`take` en Prisma).
+- Página actual extraída de `?page=N` en la URL.
+- `loading.tsx` con skeleton que refleja la estructura de la tabla.
+- Empty state cuando no hay registros.
+- Componente `PaginationControls` reutilizable (Client Component con `usePathname` + `useSearchParams`).
+
+### Flujo de Retiro
+1. Driver hace click en "Retirar" → `WithdrawalModal` (Client Component).
+2. Modal invoca Server Action `requestWithdrawal(amount)`.
+3. Action valida auth + input → llama a `createWithdrawalRequest` (Service).
+4. Service ejecuta transacción atómica: valida saldo → debita balance → crea Withdrawal → crea Transaction.
+5. Action ejecuta `revalidatePath("/driver")` → dashboard se actualiza.
+
+---
+
+## 🚀 Pendientes
+
+- [ ] Integrar Clerk (reemplazar `mock-auth.ts`)
+- [ ] Integración Mercado Pago
+- [ ] Vista de Liquidaciones
+- [ ] Panel Admin
+- [ ] Tests
