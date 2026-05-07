@@ -67,7 +67,7 @@ export async function requestWithdrawal(amount: number): Promise<WithdrawalResul
     // Mapeo de errores técnicos a mensajes de usuario
     const userMessages: Record<string, string> = {
       TRABAJADOR_NOT_FOUND: "No se encontró tu perfil de trabajador.",
-      CBU_CVU_MISSING: "No tenés un CBU/CVU registrado. Por favor, cargalo en tu perfil.",
+      CBU_CVU_MISSING: "No tenés un CBU/CVU registrado. Por favor, cargalo en la sección de configuración.",
       BALANCE_NOT_FOUND: "No se pudo acceder a tu balance. Contactá a soporte.",
       INSUFFICIENT_BALANCE: "Saldo insuficiente para realizar este retiro.",
     };
