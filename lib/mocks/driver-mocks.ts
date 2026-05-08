@@ -11,7 +11,7 @@ import type { IncomeDataPoint } from "@/lib/types/income";
  */
 
 /** Total ganado en el mes actual (mock) */
-export const MOCK_EARNED_THIS_MONTH = 187_500;
+export const MOCK_EARNED_THIS_MONTH = "187500.00";
 
 /** Datos del gráfico de ingresos — últimos 7 días */
 export const MOCK_INCOME_CHART: IncomeDataPoint[] = [
