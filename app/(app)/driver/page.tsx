@@ -11,6 +11,8 @@ import {
 } from "@/components/driver/DriverDashboardSkeletons";
 import { MOCK_EARNED_THIS_MONTH, MOCK_INCOME_CHART } from "@/lib/mocks/driver-mocks";
 
+export const dynamic = "force-dynamic";
+
 type DriverUserPromise = ReturnType<typeof getUserWithBalance>;
 
 export default function DriverDashboardPage() {
