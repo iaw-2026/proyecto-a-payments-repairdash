@@ -140,10 +140,55 @@ No se crean interfaces manuales que dupliquen modelos de la DB (`AGENTS.md` Rule
 
 ---
 
+## Payments - Checkout Pro
+
+### Flujo principal
+1. Rider App inicia el pago con `POST /api/payments/checkout`.
+   - Debe enviar `x-internal-api-key`.
+   - El body incluye `trabajoId`, `clientId`, `trabajadorId`, `amount` como string decimal y `description`.
+2. `app/api/payments/checkout/route.ts` valida la API key y delega en `lib/services/checkout.ts`.
+3. `lib/services/checkout.ts` valida datos, crea o reutiliza `Transaction` por `trabajoId`, y llama a Mercado Pago.
+4. `lib/integrations/mercadopago.ts` crea la preference de Checkout Pro.
+   - Mercado Pago genera `preferenceId`.
+   - Payments guarda `gatewayPreferenceId` y `gatewayCheckoutUrl`.
+   - `external_reference` queda apuntando a `Transaction.id`.
+   - `notification_url` apunta a `/api/payments/webhook`.
+5. El endpoint de checkout responde con redirect `303` a `/rider/checkout/confirmacion?transactionId=...`.
+6. `app/(app)/rider/checkout/confirmacion/page.tsx` muestra el resumen y el boton para continuar a Mercado Pago usando `gatewayCheckoutUrl`.
+7. Cuando el usuario paga, Mercado Pago llama a `POST /api/payments/webhook`.
+8. `app/api/payments/webhook/route.ts` recibe `data.id`, consulta el pago real en Mercado Pago y vuelve a `lib/services/checkout.ts`.
+9. Si el pago esta aprobado, Payments marca la transaccion como `RESERVED`, guarda `gatewayPaymentId` y suma el monto a `Balance.balanceLocked`.
+10. Despues de persistir la DB, Payments avisa a Rider App con `sendRiderPaymentCallback`.
+
+### Archivos principales
+| Archivo | Responsabilidad |
+|---|---|
+| `lib/services/checkout.ts` | Reglas de negocio del checkout, idempotencia por `trabajoId`, procesamiento de webhook y actualizacion de balances. |
+| `lib/integrations/mercadopago.ts` | Conexion con SDK de Mercado Pago para crear preferences y consultar pagos. |
+| `lib/integrations/rider-callback.ts` | POST server-to-server hacia Rider App con el resultado del pago. |
+| `lib/validations/checkout.ts` | Validacion Zod del contrato de checkout. |
+| `lib/internal-auth.ts` | Validacion de `x-internal-api-key` para endpoints internos. |
+| `app/api/payments/checkout/route.ts` | Endpoint externo llamado por Rider App para iniciar el checkout. |
+| `app/api/payments/webhook/route.ts` | Endpoint llamado por Mercado Pago con notificaciones de pago. |
+| `app/(app)/rider/checkout/confirmacion/page.tsx` | Pantalla de Payments previa a Mercado Pago. |
+
+### Variables de entorno
+```env
+MERCADO_PAGO_ACCESS_TOKEN="TEST-..."
+APP_URL="https://tu-url-publica.ngrok-free.dev"
+PAYMENTS_INTERNAL_API_KEY="..."
+RIDER_PAYMENT_CALLBACK_URL="https://rider-app/api/payments/result"
+RIDER_CALLBACK_API_KEY="..."
+```
+
+Para pruebas locales sin Rider App real, `RIDER_PAYMENT_CALLBACK_URL` puede apuntar a un mock local, por ejemplo `http://127.0.0.1:4000/api/payments/result`.
+
+---
+
 ## 🚀 Pendientes
 
 - [ ] Integrar Clerk (reemplazar `mock-auth.ts`)
-- [ ] Integración Mercado Pago
+- [ ] Completar pantallas finales de retorno Mercado Pago (`success`, `pending`, `failure`)
 - [ ] Vista de Liquidaciones
 - [ ] Panel Admin
 - [ ] Tests

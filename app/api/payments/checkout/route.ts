@@ -1,65 +1,69 @@
-import { Prisma, TransactionStatus } from "@/generated/prisma/client";
-import { prisma } from "@/lib/prisma";
+import { validateInternalApiKey } from "@/lib/internal-auth";
+import { CheckoutError, createCheckout } from "@/lib/services/checkout";
 import { NextResponse } from "next/server";
+import { ZodError } from "zod";
 
-function parseAmount(value: FormDataEntryValue | null) {
-  const numericValue = typeof value === "string" ? Number(value) : Number(value?.toString() ?? "0");
-  return Number.isFinite(numericValue) ? numericValue : 0;
+function getBaseUrl(request: Request) {
+  return process.env.APP_URL ?? new URL(request.url).origin;
 }
 
 export async function POST(request: Request) {
-  const contentType = request.headers.get("content-type") ?? "";
-  let clientId = "";
-  let trabajadorId = "";
-  let amount = 0;
-  let description = "Servicio de reparacion";
+  const authError = validateInternalApiKey(request);
 
-  if (contentType.includes("application/json")) {
-    const body = (await request.json()) as {
-      clientId?: string;
-      trabajadorId?: string;
-      amount?: number;
-      description?: string;
-    };
-
-    clientId = body.clientId ?? "";
-    trabajadorId = body.trabajadorId ?? "";
-    amount = Number(body.amount ?? 0);
-    description = body.description ?? description;
-  } else {
-    const formData = await request.formData();
-    clientId = String(formData.get("clientId") ?? "");
-    trabajadorId = String(formData.get("trabajadorId") ?? "");
-    amount = parseAmount(formData.get("amount"));
-    description = String(formData.get("description") ?? description);
+  if (authError) {
+    return authError;
   }
 
-  if (!clientId || !trabajadorId || amount <= 0) {
-    return NextResponse.json({ error: "Datos invalidos" }, { status: 400 });
-  }
+  try {
+    const contentType = request.headers.get("content-type") ?? "";
 
-  const transaction = await prisma.transaction.create({
-    data: {
-      id: crypto.randomUUID(),
-      amount: new Prisma.Decimal(amount.toFixed(2)),
-      status: TransactionStatus.PENDING,
-      clientId,
-      trabajadorId,
-      gatewayPaymentId: null,
-    },
-  });
+    if (!contentType.includes("application/json")) {
+      return NextResponse.json(
+        {
+          success: false,
+          errorCode: "UNSUPPORTED_CONTENT_TYPE",
+          message: "El checkout externo solo acepta application/json.",
+        },
+        { status: 415 },
+      );
+    }
 
-  if (!contentType.includes("application/json")) {
-    return NextResponse.redirect(new URL(`/rider?created=${encodeURIComponent(description)}`, request.url));
-  }
+    const body = await request.json();
+    const checkout = await createCheckout(body, getBaseUrl(request));
 
-  return NextResponse.json(
-    {
-      transaction: {
-        ...transaction,
-        amount: transaction.amount.toString(),
+    return NextResponse.redirect(checkout.confirmationUrl, { status: 303 });
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return NextResponse.json(
+        {
+          success: false,
+          errorCode: "INVALID_CHECKOUT_PAYLOAD",
+          message: error.issues[0]?.message ?? "Datos de checkout inválidos.",
+        },
+        { status: 400 },
+      );
+    }
+
+    if (error instanceof CheckoutError) {
+      return NextResponse.json(
+        {
+          success: false,
+          errorCode: error.errorCode,
+          message: error.message,
+        },
+        { status: error.statusCode },
+      );
+    }
+
+    console.error("Checkout creation failed", error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        errorCode: "CHECKOUT_CREATION_FAILED",
+        message: "No se pudo crear el checkout.",
       },
-    },
-    { status: 201 },
-  );
+      { status: 500 },
+    );
+  }
 }

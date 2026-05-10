@@ -1,37 +1,21 @@
-/**
- * Validation schemas for checkout operations
- * TODO: Implement with Zod in Week 2
- */
+import { z } from "zod";
 
-export interface CheckoutInput {
-  clientId: string;
-  trabajadorId: string;
-  amount: string;
-}
+const decimalAmountSchema = z
+  .string()
+  .trim()
+  .regex(/^\d+(\.\d{1,2})?$/, "El monto debe tener hasta dos decimales.")
+  .refine((value) => value !== "0" && value !== "0.0" && value !== "0.00", "El monto debe ser mayor a cero.");
+
+export const checkoutSchema = z.object({
+  trabajoId: z.string().trim().min(1, "trabajoId es requerido."),
+  clientId: z.string().trim().min(1, "clientId es requerido."),
+  trabajadorId: z.string().trim().min(1, "trabajadorId es requerido."),
+  amount: decimalAmountSchema,
+  description: z.string().trim().min(1).max(180).default("Servicio de reparación"),
+});
+
+export type CheckoutInput = z.infer<typeof checkoutSchema>;
 
 export function validateCheckout(data: unknown): CheckoutInput {
-  // TODO: Replace with Zod schema validation
-  if (!data || typeof data !== "object") {
-    throw new Error("Invalid checkout data");
-  }
-
-  const checkout = data as Record<string, unknown>;
-
-  if (!checkout.clientId || typeof checkout.clientId !== "string") {
-    throw new Error("Invalid clientId");
-  }
-
-  if (!checkout.trabajadorId || typeof checkout.trabajadorId !== "string") {
-    throw new Error("Invalid trabajadorId");
-  }
-
-  if (!checkout.amount || typeof checkout.amount !== "string") {
-    throw new Error("Invalid amount");
-  }
-
-  return {
-    clientId: checkout.clientId,
-    trabajadorId: checkout.trabajadorId,
-    amount: checkout.amount,
-  };
+  return checkoutSchema.parse(data);
 }

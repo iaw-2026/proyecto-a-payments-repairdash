@@ -50,9 +50,10 @@ export async function createWithdrawalRequest(clerkId: string, amount: number) {
     });
 
     // Crear registro de retiro
+    const withdrawalId = randomUUID();
     const withdrawal = await tx.withdrawal.create({
       data: {
-        id: randomUUID(),
+        id: withdrawalId,
         trabajadorId: clerkId,
         amount: decimalAmount,
         status: "REQUESTED",
@@ -63,6 +64,7 @@ export async function createWithdrawalRequest(clerkId: string, amount: number) {
     await tx.transaction.create({
       data: {
         id: randomUUID(),
+        trabajoId: `withdrawal:${withdrawalId}`,
         amount: decimalAmount.negated(),
         status: TransactionStatus.PENDING,
         trabajadorId: clerkId,

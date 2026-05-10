@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { mapTransactionStatusToRiderStatus } from "@/lib/services/checkout";
 import { NextResponse } from "next/server";
 
 export async function GET(_request: Request, context: { params: Promise<{ transactionId: string }> }) {
@@ -12,9 +13,10 @@ export async function GET(_request: Request, context: { params: Promise<{ transa
   }
 
   return NextResponse.json({
-    transaction: {
-      ...transaction,
-      amount: transaction.amount.toString(),
-    },
+    success: true,
+    transactionId: transaction.id,
+    trabajoId: transaction.trabajoId,
+    paymentStatus: mapTransactionStatusToRiderStatus(transaction.status),
+    reason: transaction.status === "FAILED" ? "payment_rejected" : null,
   });
 }

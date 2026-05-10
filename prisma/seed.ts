@@ -76,6 +76,7 @@ async function main() {
     data: [
       {
         id: "txn_pending_1",
+        trabajoId: "job_demo_pending_1",
         amount: new Prisma.Decimal("18000.00"),
         status: TransactionStatus.PENDING,
         clientId: rider.clerkId,
@@ -84,6 +85,7 @@ async function main() {
       },
       {
         id: "txn_reserved_1",
+        trabajoId: "job_demo_reserved_1",
         amount: new Prisma.Decimal("12000.00"),
         status: TransactionStatus.RESERVED,
         clientId: rider.clerkId,
@@ -92,6 +94,7 @@ async function main() {
       },
       {
         id: "txn_liquidated_1",
+        trabajoId: "job_demo_liquidated_1",
         amount: new Prisma.Decimal("9500.00"),
         status: TransactionStatus.LIQUIDATED,
         clientId: rider.clerkId,

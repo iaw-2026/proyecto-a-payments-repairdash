@@ -1,0 +1,1 @@
+ALTER TABLE "Transaction" ALTER COLUMN "clientId" DROP NOT NULL;
