@@ -1,4 +1,4 @@
-import { Withdrawal, WithdrawalStatus } from "@/generated/prisma";
+import { Withdrawal, WithdrawalStatus } from "@/generated/prisma/client";
 
 /* ── Status badge config ── */
 

@@ -2,6 +2,8 @@ import { getAuthUser } from "@/lib/mock-auth";
 import { getTrabajadorByClerkId } from "@/lib/services/users";
 import { CbuConfigForm } from "@/components/driver/CbuConfigForm";
 
+export const dynamic = "force-dynamic";
+
 export default async function DriverConfigPage() {
   const { clerkId } = await getAuthUser();
   const trabajador = await getTrabajadorByClerkId(clerkId);

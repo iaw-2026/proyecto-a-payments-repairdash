@@ -1,5 +1,5 @@
 import { MetricCard } from "@/components/ui/MetricCard";
-import { Balance } from "@/generated/prisma";
+import { Balance } from "@/generated/prisma/client";
 import type { Prisma } from "@/generated/prisma/client";
 
 type MoneyAmount = Prisma.Decimal | string;

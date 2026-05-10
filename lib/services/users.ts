@@ -4,7 +4,6 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { User } from "@/generated/prisma";
 
 /**
  * Busca un User por rol e incluye su Trabajador y Balance.

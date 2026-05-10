@@ -4,7 +4,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { Prisma, TransactionStatus, Withdrawal } from "@/generated/prisma";
+import { Prisma, TransactionStatus, Withdrawal } from "@/generated/prisma/client";
 import { getAuthUser } from "@/lib/mock-auth";
 import { randomUUID } from "crypto";
 

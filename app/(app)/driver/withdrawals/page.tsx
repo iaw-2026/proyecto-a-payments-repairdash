@@ -3,6 +3,8 @@ import { getWithdrawals } from "@/lib/services/withdrawals";
 import { WithdrawalTable } from "@/components/driver/WithdrawalTable";
 import { PaginationControls } from "@/components/ui/PaginationControls";
 
+export const dynamic = "force-dynamic";
+
 /* ── Page Component ── */
 
 export default async function DriverWithdrawalsPage({

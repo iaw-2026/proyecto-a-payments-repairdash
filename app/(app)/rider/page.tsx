@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 function formatMoney(value: { toNumber: () => number } | null) {
   return new Intl.NumberFormat("es-AR", {
     style: "currency",
