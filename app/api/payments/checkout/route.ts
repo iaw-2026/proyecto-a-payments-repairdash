@@ -10,7 +10,11 @@ function getBaseUrl(request: Request) {
     return new URL(request.url).origin;
   }
 
-  return /^https?:\/\//i.test(configuredUrl) ? configuredUrl : `https://${configuredUrl}`;
+  const absoluteUrl = /^https?:\/\//i.test(configuredUrl)
+    ? configuredUrl
+    : `https://${configuredUrl}`;
+
+  return new URL(absoluteUrl).origin;
 }
 
 function buildRiderConfirmationUrl(baseUrl: string, transactionId: string) {

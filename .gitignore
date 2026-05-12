@@ -139,3 +139,6 @@ dist
 generated/prisma
 .vercel
 .env*.local
+
+.vercel
+.env*.local
