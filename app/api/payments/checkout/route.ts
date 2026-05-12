@@ -4,7 +4,13 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
 function getBaseUrl(request: Request) {
-  return process.env.APP_URL ?? new URL(request.url).origin;
+  const configuredUrl = process.env.APP_URL?.trim();
+
+  if (!configuredUrl) {
+    return new URL(request.url).origin;
+  }
+
+  return /^https?:\/\//i.test(configuredUrl) ? configuredUrl : `https://${configuredUrl}`;
 }
 
 function buildRiderConfirmationUrl(baseUrl: string, transactionId: string) {
