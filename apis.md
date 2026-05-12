@@ -8,7 +8,7 @@
 **App destino:** Payments App  
 **Objetivo:** iniciar el checkout de un trabajo.
 
-Payments crea o reutiliza una transaccion interna por `trabajoId`, crea una preference de Mercado Pago Checkout Pro y redirige al usuario a una pantalla de confirmacion de Payments.
+Payments crea o reutiliza una transaccion interna por `trabajoId`, crea una preference de Mercado Pago Checkout Pro y redirige al usuario a la pantalla Rider de Payments con el pago seleccionado.
 
 El pago no queda aprobado en este endpoint. La confirmacion real llega despues por webhook de Mercado Pago.
 
@@ -47,10 +47,10 @@ Payments responde con redirect:
 
 ```http
 303 See Other
-Location: https://payments-app/rider/checkout/confirmacion?transactionId=<transactionId>
+Location: https://payments-app/rider?transactionId=<transactionId>
 ```
 
-La pantalla de confirmacion de Payments muestra el resumen del pago. Cuando el usuario confirma, Payments lo redirige a Mercado Pago.
+La pantalla Rider de Payments muestra el resumen del pago. Cuando el usuario confirma, Payments lo redirige a Mercado Pago.
 
 ### Errores Posibles
 
@@ -276,7 +276,7 @@ Payments intenta enviar el callback hasta 3 veces si Rider App responde error o 
 
 1. Rider App llama `POST /api/payments/checkout`.
 2. Payments crea la transaccion y la preference de Mercado Pago.
-3. Payments redirige a `/rider/checkout/confirmacion?transactionId=...`.
+3. Payments redirige a `/rider?transactionId=...`.
 4. El usuario confirma y va a Mercado Pago.
 5. Mercado Pago procesa el pago.
 6. Mercado Pago redirige al usuario a una pantalla de Payments.

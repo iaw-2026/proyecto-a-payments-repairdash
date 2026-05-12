@@ -153,8 +153,8 @@ No se crean interfaces manuales que dupliquen modelos de la DB (`AGENTS.md` Rule
    - Payments guarda `gatewayPreferenceId` y `gatewayCheckoutUrl`.
    - `external_reference` queda apuntando a `Transaction.id`.
    - `notification_url` apunta a `/api/payments/webhook`.
-5. El endpoint de checkout responde con redirect `303` a `/rider/checkout/confirmacion?transactionId=...`.
-6. `app/(app)/rider/checkout/confirmacion/page.tsx` muestra el resumen y el boton para continuar a Mercado Pago usando `gatewayCheckoutUrl`.
+5. El endpoint de checkout responde con redirect `303` a `/rider?transactionId=...`.
+6. `app/(app)/rider/page.tsx` muestra el resumen y el boton para continuar a Mercado Pago usando `gatewayCheckoutUrl`.
 7. Cuando el usuario paga, Mercado Pago llama a `POST /api/payments/webhook`.
 8. `app/api/payments/webhook/route.ts` recibe `data.id`, consulta el pago real en Mercado Pago y vuelve a `lib/services/checkout.ts`.
 9. Si el pago esta aprobado, Payments marca la transaccion como `RESERVED`, guarda `gatewayPaymentId` y suma el monto a `Balance.balanceLocked`.
@@ -170,7 +170,7 @@ No se crean interfaces manuales que dupliquen modelos de la DB (`AGENTS.md` Rule
 | `lib/internal-auth.ts` | Validacion de `x-internal-api-key` para endpoints internos. |
 | `app/api/payments/checkout/route.ts` | Endpoint externo llamado por Rider App para iniciar el checkout. |
 | `app/api/payments/webhook/route.ts` | Endpoint llamado por Mercado Pago con notificaciones de pago. |
-| `app/(app)/rider/checkout/confirmacion/page.tsx` | Pantalla de Payments previa a Mercado Pago. |
+| `app/(app)/rider/page.tsx` | Pantalla Rider y confirmacion previa a Mercado Pago. |
 
 ### Variables de entorno
 ```env

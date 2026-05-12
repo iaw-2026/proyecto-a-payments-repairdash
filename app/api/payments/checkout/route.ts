@@ -7,6 +7,13 @@ function getBaseUrl(request: Request) {
   return process.env.APP_URL ?? new URL(request.url).origin;
 }
 
+function buildRiderConfirmationUrl(baseUrl: string, transactionId: string) {
+  const url = new URL("/rider", baseUrl);
+  url.searchParams.set("transactionId", transactionId);
+
+  return url;
+}
+
 export async function POST(request: Request) {
   const authError = validateInternalApiKey(request);
 
@@ -31,7 +38,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const checkout = await createCheckout(body, getBaseUrl(request));
 
-    return NextResponse.redirect(checkout.confirmationUrl, { status: 303 });
+    return NextResponse.redirect(buildRiderConfirmationUrl(getBaseUrl(request), checkout.transactionId), { status: 303 });
   } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json(

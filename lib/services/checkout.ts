@@ -23,7 +23,6 @@ export type CheckoutResult = {
   trabajoId: string;
   preferenceId: string;
   checkoutUrl: string;
-  confirmationUrl: string;
 };
 
 function getCheckoutUrlFromPreference(preference: { init_point?: string; sandbox_init_point?: string }) {
@@ -48,11 +47,6 @@ function assertSameCheckout(existing: {
       409,
     );
   }
-}
-
-function buildConfirmationUrl(baseUrl: string, transactionId: string) {
-  const normalizedBaseUrl = baseUrl.replace(/\/$/, "");
-  return `${normalizedBaseUrl}/rider/checkout/confirmacion?transactionId=${encodeURIComponent(transactionId)}`;
 }
 
 export async function createCheckout(inputData: unknown, baseUrl: string): Promise<CheckoutResult> {
@@ -119,7 +113,6 @@ export async function createCheckout(inputData: unknown, baseUrl: string): Promi
         trabajoId: transaction.trabajoId,
         preferenceId: transaction.gatewayPreferenceId,
         checkoutUrl: transaction.gatewayCheckoutUrl,
-        confirmationUrl: buildConfirmationUrl(baseUrl, transaction.id),
       };
     }
   } else {
@@ -167,7 +160,6 @@ export async function createCheckout(inputData: unknown, baseUrl: string): Promi
     trabajoId: transaction.trabajoId,
     preferenceId: preference.id,
     checkoutUrl,
-    confirmationUrl: buildConfirmationUrl(baseUrl, transaction.id),
   };
 }
 
