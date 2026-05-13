@@ -18,6 +18,7 @@ enum TransactionStatus {
   LIQUIDATED
   DISPUTED
   REFUNDED
+  FAILED
 }
 
 model User {
@@ -43,13 +44,16 @@ model Trabajador {
 }
 
 model Transaction {
-  id              String            @id
-  amount          Decimal           @db.Decimal(12,2)
-  status          TransactionStatus
-  clientId        String?
-  trabajadorId    String
-  gatewayPaymentId String?
-  createdAt       DateTime          @default(now())
+  id                  String            @id
+  trabajoId           String            @unique
+  amount              Decimal           @db.Decimal(12,2)
+  status              TransactionStatus
+  clientId            String?
+  trabajadorId        String
+  gatewayPreferenceId String?
+  gatewayCheckoutUrl  String?
+  gatewayPaymentId    String?
+  createdAt           DateTime          @default(now())
 }
 
 model Balance {

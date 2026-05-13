@@ -7,16 +7,16 @@ import {
 
 export const dynamic = "force-dynamic";
 
-type RiderCheckoutSuccessPageProps = {
+type RiderCheckoutPendingPageProps = {
   searchParams: CheckoutResultSearchParams;
 };
 
-export default async function RiderCheckoutSuccessPage({
+export default async function RiderCheckoutPendingPage({
   searchParams,
-}: RiderCheckoutSuccessPageProps) {
+}: RiderCheckoutPendingPageProps) {
   const { transactionId: rawTransactionId } = await searchParams;
   const transactionId = firstCheckoutSearchValue(rawTransactionId);
   const data = transactionId ? await getRiderCheckoutResultData(transactionId) : null;
 
-  return <CheckoutResultView kind="success" data={data} />;
+  return <CheckoutResultView kind="pending" data={data} />;
 }

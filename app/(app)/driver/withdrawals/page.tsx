@@ -2,6 +2,12 @@ import Link from "next/link";
 import { getWithdrawals } from "@/lib/services/withdrawals";
 import { WithdrawalTable } from "@/components/driver/WithdrawalTable";
 import { PaginationControls } from "@/components/ui/PaginationControls";
+import {
+  parsePageSearchParam,
+  redirectToCanonicalPage,
+} from "@/lib/pagination";
+
+export const dynamic = "force-dynamic";
 
 /* ── Page Component ── */
 
@@ -12,9 +18,16 @@ export default async function DriverWithdrawalsPage({
 }) {
   const resolvedParams = await searchParams;
   const rawPage = resolvedParams.page;
-  const page = Math.max(1, Number(rawPage) || 1);
+  const page = parsePageSearchParam(rawPage);
 
   const { items, totalPages, currentPage } = await getWithdrawals(page, 10);
+
+  redirectToCanonicalPage({
+    pathname: "/driver/withdrawals",
+    searchParams: resolvedParams,
+    requestedPageValue: rawPage,
+    currentPage,
+  });
 
   return (
     <div className="max-w-4xl space-y-6 animate-fade-in">

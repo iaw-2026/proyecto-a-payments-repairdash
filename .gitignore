@@ -137,3 +137,8 @@ dist
 
 # generated prisma client
 generated/prisma
+.vercel
+.env*.local
+
+.vercel
+.env*.local

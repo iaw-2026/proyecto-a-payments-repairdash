@@ -29,8 +29,8 @@
   --color-danger: #F87171;
 
   /* Fonts */
-  --font-sans: var(--font-outfit);
-  --font-mono: var(--font-ibm-plex-mono);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 
   /* Layout spacing */
   --spacing-sidebar: 260px;
@@ -48,7 +48,7 @@ html {
 body {
   background: transparent;
   color: var(--color-secondary);
-  font-family: var(--font-outfit), sans-serif;
+  font-family: var(--font-sans);
 }
 
 ::selection {

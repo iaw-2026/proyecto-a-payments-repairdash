@@ -4,7 +4,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { Prisma, TransactionStatus, Withdrawal } from "@/generated/prisma";
+import { Prisma, TransactionStatus, Withdrawal } from "@/generated/prisma/client";
 import { getAuthUser } from "@/lib/mock-auth";
 import { randomUUID } from "crypto";
 
@@ -50,9 +50,10 @@ export async function createWithdrawalRequest(clerkId: string, amount: number) {
     });
 
     // Crear registro de retiro
+    const withdrawalId = randomUUID();
     const withdrawal = await tx.withdrawal.create({
       data: {
-        id: randomUUID(),
+        id: withdrawalId,
         trabajadorId: clerkId,
         amount: decimalAmount,
         status: "REQUESTED",
@@ -63,6 +64,7 @@ export async function createWithdrawalRequest(clerkId: string, amount: number) {
     await tx.transaction.create({
       data: {
         id: randomUUID(),
+        trabajoId: `withdrawal:${withdrawalId}`,
         amount: decimalAmount.negated(),
         status: TransactionStatus.PENDING,
         trabajadorId: clerkId,

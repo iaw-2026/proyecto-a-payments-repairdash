@@ -1,10 +1,10 @@
 import { Prisma, PrismaClient, TransactionStatus, WithdrawalStatus } from "../generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
-const connectionString = process.env.DATABASE_URL;
+const connectionString = process.env.DATABASE_URL ?? process.env.POSTGRES_PRISMA_URL;
 
 if (!connectionString) {
-  throw new Error("DATABASE_URL is required");
+  throw new Error("DATABASE_URL or POSTGRES_PRISMA_URL is required");
 }
 
 const prisma = new PrismaClient({
@@ -76,6 +76,7 @@ async function main() {
     data: [
       {
         id: "txn_pending_1",
+        trabajoId: "job_demo_pending_1",
         amount: new Prisma.Decimal("18000.00"),
         status: TransactionStatus.PENDING,
         clientId: rider.clerkId,
@@ -84,6 +85,7 @@ async function main() {
       },
       {
         id: "txn_reserved_1",
+        trabajoId: "job_demo_reserved_1",
         amount: new Prisma.Decimal("12000.00"),
         status: TransactionStatus.RESERVED,
         clientId: rider.clerkId,
@@ -92,6 +94,7 @@ async function main() {
       },
       {
         id: "txn_liquidated_1",
+        trabajoId: "job_demo_liquidated_1",
         amount: new Prisma.Decimal("9500.00"),
         status: TransactionStatus.LIQUIDATED,
         clientId: rider.clerkId,
