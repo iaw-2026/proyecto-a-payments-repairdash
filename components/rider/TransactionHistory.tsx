@@ -10,6 +10,10 @@ function formatDate(value: Date) {
   });
 }
 
+function shortId(id: string) {
+  return id.length > 8 ? `...${id.slice(-8)}` : id;
+}
+
 export function TransactionHistory({
   transactions,
   totalTransactions,
@@ -39,8 +43,8 @@ export function TransactionHistory({
 
       {transactions.length > 0 ? (
         <>
-          <div className="overflow-x-auto">
-            <table className="min-w-[720px] w-full text-left text-sm">
+          <div className="hidden overflow-x-auto md:block">
+            <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-border">
                   <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted">
@@ -80,6 +84,31 @@ export function TransactionHistory({
               </tbody>
             </table>
           </div>
+
+          <div className="divide-y divide-border md:hidden">
+            {transactions.map((transaction) => (
+              <div key={transaction.id} className="space-y-3 px-5 py-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="whitespace-nowrap font-mono text-lg font-semibold text-foreground">
+                      {formatARS(transaction.amount)}
+                    </p>
+                    <p className="mt-2 whitespace-nowrap text-xs text-muted">
+                      {formatDate(transaction.createdAt)}
+                    </p>
+                  </div>
+
+                  <div className="flex min-w-0 flex-col items-end gap-2 text-right">
+                    <RiderStatusBadge status={transaction.status} />
+                    <p className="max-w-[8.5rem] truncate font-mono text-xs text-muted">
+                      {shortId(transaction.id)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
           <div className="border-t border-border px-4 py-4 sm:px-5">
             <PaginationControls
               currentPage={currentPage}
