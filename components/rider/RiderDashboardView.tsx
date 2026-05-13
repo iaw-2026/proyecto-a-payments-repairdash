@@ -8,6 +8,9 @@ import { TransactionHistory } from "@/components/rider/TransactionHistory";
 export function RiderDashboardView({
   rider,
   transactions,
+  totalTransactions,
+  currentPage,
+  totalPages,
   pendingTransaction,
   worker,
 }: RiderDashboardData) {
@@ -27,7 +30,12 @@ export function RiderDashboardView({
         <PaymentActionSection transaction={pendingTransaction} />
       </div>
 
-      <TransactionHistory transactions={transactions} />
+      <TransactionHistory
+        transactions={transactions}
+        totalTransactions={totalTransactions}
+        currentPage={currentPage}
+        totalPages={totalPages}
+      />
 
       <Link
         href="/"

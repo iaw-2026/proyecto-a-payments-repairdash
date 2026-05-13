@@ -86,20 +86,14 @@ function ResultEmptyState({ copy }: { copy: ResultCopy }) {
 
         <div className="rounded-xl border border-border bg-surface/70 p-3.5 backdrop-blur sm:p-6">
           <p className="text-xs leading-relaxed text-secondary sm:text-sm">
-            Volve al historial para revisar los pagos recientes o iniciar un nuevo intento desde Rider.
+            Volve al inicio para revisar los pagos recientes o iniciar un nuevo intento desde Rider.
           </p>
           <div className="mt-4 flex flex-col gap-2.5 sm:mt-6 sm:gap-3 sm:flex-row">
             <Link
-              href="/rider/payments"
+              href="/rider"
               className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2.5 text-xs font-semibold text-white transition-all hover:bg-accent-hover hover:shadow-[0_0_20px_rgba(245,0,241,0.25)] sm:px-5 sm:py-3 sm:text-sm"
             >
-              Ver historial
-            </Link>
-            <Link
-              href="/rider"
-              className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2.5 text-xs font-semibold text-foreground transition-all hover:border-accent/40 hover:bg-white/5 sm:px-5 sm:py-3 sm:text-sm"
-            >
-              Volver a Rider
+              Volver al inicio
             </Link>
           </div>
         </div>
@@ -205,10 +199,10 @@ function CheckoutSummaryResult({
             </Link>
           ) : null}
           <Link
-            href="/rider/payments"
+            href="/rider"
             className="inline-flex w-full items-center justify-center rounded-md bg-accent px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-accent-hover hover:shadow-[0_0_20px_rgba(245,0,241,0.25)] md:w-auto"
           >
-            Volver al historial
+            Volver al inicio
           </Link>
         </div>
       </section>

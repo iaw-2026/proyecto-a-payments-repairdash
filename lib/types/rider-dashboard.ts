@@ -13,6 +13,9 @@ export type RiderDashboardWorker = Prisma.TrabajadorGetPayload<{
 export type RiderDashboardData = {
   rider: RiderDashboardUser | null;
   transactions: RiderDashboardTransaction[];
+  totalTransactions: number;
+  currentPage: number;
+  totalPages: number;
   pendingTransaction: RiderDashboardTransaction | null;
   worker: RiderDashboardWorker | null;
 };

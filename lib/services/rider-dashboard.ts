@@ -2,9 +2,17 @@ import { TransactionStatus } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { RiderDashboardData } from "@/lib/types/rider-dashboard";
 
-export async function getRiderDashboardData(
-  transactionId?: string,
-): Promise<RiderDashboardData> {
+type GetRiderDashboardDataInput = {
+  transactionId?: string;
+  page?: number;
+  pageSize?: number;
+};
+
+export async function getRiderDashboardData({
+  transactionId,
+  page = 1,
+  pageSize = 10,
+}: GetRiderDashboardDataInput = {}): Promise<RiderDashboardData> {
   const rider = await prisma.user.findFirst({
     where: { role: "rider" },
     include: { cliente: true },
@@ -14,24 +22,48 @@ export async function getRiderDashboardData(
     return {
       rider,
       transactions: [],
+      totalTransactions: 0,
+      currentPage: 1,
+      totalPages: 1,
       pendingTransaction: null,
       worker: null,
     };
   }
 
+  const safePageSize = Math.max(1, Math.min(50, Math.floor(pageSize)));
+  const totalTransactions = await prisma.transaction.count({
+    where: { clientId: rider.clerkId },
+  });
+  const totalPages = Math.max(1, Math.ceil(totalTransactions / safePageSize));
+  const currentPage = Math.min(Math.max(1, Math.floor(page)), totalPages);
+  const skip = (currentPage - 1) * safePageSize;
+
   const transactions = await prisma.transaction.findMany({
     where: { clientId: rider.clerkId },
     orderBy: { createdAt: "desc" },
+    skip,
+    take: safePageSize,
   });
 
   const requestedTransaction = transactionId
-    ? transactions.find((transaction) => transaction.id === transactionId) ?? null
+    ? await prisma.transaction.findFirst({
+        where: {
+          id: transactionId,
+          clientId: rider.clerkId,
+        },
+      })
     : null;
   const pendingTransaction = transactionId
     ? requestedTransaction?.status === TransactionStatus.PENDING
       ? requestedTransaction
       : null
-    : transactions.find((transaction) => transaction.status === TransactionStatus.PENDING) ?? null;
+    : await prisma.transaction.findFirst({
+        where: {
+          clientId: rider.clerkId,
+          status: TransactionStatus.PENDING,
+        },
+        orderBy: { createdAt: "desc" },
+      });
 
   const worker = pendingTransaction
     ? await prisma.trabajador.findUnique({
@@ -43,6 +75,9 @@ export async function getRiderDashboardData(
   return {
     rider,
     transactions,
+    totalTransactions,
+    currentPage,
+    totalPages,
     pendingTransaction,
     worker,
   };
