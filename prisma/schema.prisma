@@ -37,7 +37,7 @@ model Cliente {
 
 model Trabajador {
   clerkId      String  @id
-  cbuCvu       String
+  cbuCvu       String?
   user         User    @relation(fields: [clerkId], references: [clerkId])
   balance      Balance?
   withdrawals  Withdrawal[]

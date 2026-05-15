@@ -10,7 +10,7 @@
  *  3. Mapeo de errores de negocio a mensajes amigables para el usuario.
  */
 
-import { getAuthUser } from "@/lib/mock-auth";
+import { getAuthUser } from "@/lib/auth";
 import { createWithdrawalRequest } from "@/lib/services/withdrawals";
 import { revalidatePath } from "next/cache";
 
@@ -37,7 +37,7 @@ export async function requestWithdrawal(amount: number): Promise<WithdrawalResul
   let clerkId: string;
 
   try {
-    const user = await getAuthUser();
+    const user = await getAuthUser("driver");
     clerkId = user.clerkId;
   } catch {
     return { ok: false, error: "No hay sesión activa. Iniciá sesión para continuar." };

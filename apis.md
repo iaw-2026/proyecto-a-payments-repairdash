@@ -1,5 +1,14 @@
 # APIs Payments App - Checkout Pro
 
+## Autenticacion
+
+Payments usa Clerk solo para sesion web de usuarios en la app (`/sign-in`, `/rider`, `/driver`, `/dashboard`). Las llamadas server-to-server entre apps no usan JWT de Clerk: siguen usando `x-internal-api-key`.
+
+- Rider App -> Payments: `x-internal-api-key: <PAYMENTS_INTERNAL_API_KEY>`.
+- Payments -> Rider App callback: `x-internal-api-key: <RIDER_CALLBACK_API_KEY>`.
+- Clerk -> Payments webhook: firma verificada con `CLERK_WEBHOOK_SIGNING_SECRET`.
+- Mercado Pago -> Payments webhook: notificacion publica de Mercado Pago, luego Payments consulta el pago real en Mercado Pago.
+
 ## 1. Iniciar Pago
 
 **Endpoint:** `POST /api/payments/checkout`

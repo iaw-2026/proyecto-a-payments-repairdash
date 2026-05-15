@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getUserWithBalance } from "@/lib/services/users";
+import { getCurrentDriverWithBalance } from "@/lib/services/users";
 import { BalanceCards } from "@/components/driver/BalanceCards";
 import { IncomeChart } from "@/components/driver/IncomeChart";
 import { QuickWithdrawalAction } from "@/components/driver/QuickWithdrawalAction";
@@ -13,12 +13,12 @@ import { MOCK_EARNED_THIS_MONTH, MOCK_INCOME_CHART } from "@/lib/mocks/driver-mo
 
 export const dynamic = "force-dynamic";
 
-type DriverUserPromise = ReturnType<typeof getUserWithBalance>;
+type DriverUserPromise = ReturnType<typeof getCurrentDriverWithBalance>;
 
 export default function DriverDashboardPage() {
   // Disparamos la query una sola vez y compartimos la misma promesa entre secciones.
   // Como no usamos await acá, la página puede renderizar los skeletons enseguida.
-  const userPromise = getUserWithBalance("driver");
+  const userPromise = getCurrentDriverWithBalance();
 
   return (
     <div className="max-w-5xl space-y-8 animate-fade-in">

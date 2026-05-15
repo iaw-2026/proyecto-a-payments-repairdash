@@ -1,6 +1,6 @@
 "use server";
 
-import { getAuthUser } from "@/lib/mock-auth";
+import { getAuthUser } from "@/lib/auth";
 import { updateTrabajadorCbuCvu } from "@/lib/services/users";
 import { revalidatePath } from "next/cache";
 
@@ -17,7 +17,7 @@ export type UpdateCbuResult = UpdateCbuSuccess | UpdateCbuError;
 
 export async function updateCbuCvuAction(cbuCvu: string): Promise<UpdateCbuResult> {
   try {
-    const { clerkId } = await getAuthUser();
+    const { clerkId } = await getAuthUser("driver");
 
     // Validar en el servidor: exactamente 22 dígitos numéricos
     if (!/^\d{22}$/.test(cbuCvu)) {

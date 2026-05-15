@@ -8,10 +8,6 @@ export default async function DashboardPage() {
     redirect("/driver");
   }
 
-  if (role === "admin") {
-    redirect("/admin");
-  }
-
   if (role === "rider") {
     redirect("/rider");
   }

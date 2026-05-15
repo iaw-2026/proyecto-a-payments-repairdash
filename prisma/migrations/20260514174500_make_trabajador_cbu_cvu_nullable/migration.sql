@@ -1,0 +1,1 @@
+ALTER TABLE "Trabajador" ALTER COLUMN "cbuCvu" DROP NOT NULL;
