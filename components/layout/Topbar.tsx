@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SignOutButton } from "@clerk/nextjs";
+import { AccountMenu } from "@/components/layout/AccountMenu";
 import { getUserRole } from "@/lib/auth";
 
 export async function Topbar() {
@@ -26,14 +26,7 @@ export async function Topbar() {
               {roleLabel}
             </Link>
           ) : null}
-          <SignOutButton redirectUrl="/">
-            <button
-              type="button"
-              className="rounded-md border border-border px-4 py-2 font-medium text-muted transition-all hover:border-accent/40 hover:bg-white/5 hover:text-foreground"
-            >
-              Salir
-            </button>
-          </SignOutButton>
+          <AccountMenu />
         </nav>
       </div>
     </header>
