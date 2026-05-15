@@ -13,6 +13,16 @@ function parseRole(value: unknown): ClerkUserRole | null {
   return null;
 }
 
+function getMetadataRole(user: {
+  public_metadata?: Record<string, unknown> | null;
+  private_metadata?: Record<string, unknown> | null;
+}) {
+  return (
+    parseRole(user.private_metadata?.role) ??
+    parseRole(user.public_metadata?.role)
+  );
+}
+
 function getPrimaryEmail(user: {
   primary_email_address_id: string | null;
   email_addresses: Array<{ id: string; email_address: string }>;
@@ -122,9 +132,15 @@ export async function POST(request: NextRequest) {
     return Response.json({ success: true, ignored: true });
   }
 
-  const role = parseRole(event.data.public_metadata.role);
+  const role = getMetadataRole(event.data);
 
   if (role !== "rider" && role !== "driver") {
+    console.warn("Clerk webhook ignored: role metadata missing", {
+      clerkId: event.data.id,
+      eventType: event.type,
+      hasPrivateRole: Boolean(event.data.private_metadata?.role),
+      hasPublicRole: Boolean(event.data.public_metadata?.role),
+    });
     return Response.json({ success: true, ignored: true });
   }
 
