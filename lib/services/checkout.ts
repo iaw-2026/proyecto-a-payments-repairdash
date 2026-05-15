@@ -2,6 +2,7 @@ import { Prisma, TransactionStatus } from "@/generated/prisma/client";
 import { getMercadoPagoPayment, createMercadoPagoPreference } from "@/lib/integrations/mercadopago";
 import { sendRiderPaymentCallback } from "@/lib/integrations/rider-callback";
 import { prisma } from "@/lib/prisma";
+import { schedulePendingLiquidations } from "@/lib/services/liquidations";
 import type { RiderPaymentCallbackPayload, RiderPaymentStatus } from "@/lib/types/payment-callback";
 import type { CheckoutInput } from "@/lib/validations/checkout";
 import { validateCheckout } from "@/lib/validations/checkout";
@@ -255,6 +256,12 @@ export async function processMercadoPagoPayment(payment: PaymentResponse) {
       data: {
         status: nextStatus,
         gatewayPaymentId,
+        reservedAt:
+          nextStatus === TransactionStatus.RESERVED &&
+          transaction.status !== TransactionStatus.RESERVED &&
+          transaction.status !== TransactionStatus.LIQUIDATED
+            ? new Date()
+            : transaction.reservedAt,
       },
     });
   });
@@ -270,6 +277,10 @@ export async function processMercadoPagoPayment(payment: PaymentResponse) {
   // Primero persistimos el estado interno; recién después notificamos a Rider.
   // Si el callback falla, Payments conserva la fuente de verdad.
   await sendRiderPaymentCallback(callbackPayload);
+
+  if (updatedTransaction.status === TransactionStatus.RESERVED) {
+    schedulePendingLiquidations();
+  }
 
   return {
     transaction: updatedTransaction,

@@ -12,6 +12,7 @@ const prisma = new PrismaClient({
 });
 
 async function main() {
+  await prisma.commissionSettings.deleteMany();
   await prisma.withdrawal.deleteMany();
   await prisma.transaction.deleteMany();
   await prisma.balance.deleteMany();
@@ -72,6 +73,16 @@ async function main() {
     },
   });
 
+  await prisma.commissionSettings.create({
+    data: {
+      id: "platform",
+      commissionRate: new Prisma.Decimal("10.00"),
+    },
+  });
+
+  const liquidatedAt = new Date();
+  const reservedAt = new Date(liquidatedAt.getTime() - 60_000);
+
   await prisma.transaction.createMany({
     data: [
       {
@@ -91,6 +102,7 @@ async function main() {
         clientId: rider.clerkId,
         trabajadorId: driverOne.clerkId,
         gatewayPaymentId: "mp_demo_001",
+        reservedAt,
       },
       {
         id: "txn_liquidated_1",
@@ -100,6 +112,11 @@ async function main() {
         clientId: rider.clerkId,
         trabajadorId: driverTwo.clerkId,
         gatewayPaymentId: "mp_demo_002",
+        reservedAt,
+        liquidatedAt,
+        commissionRate: new Prisma.Decimal("10.00"),
+        commissionAmount: new Prisma.Decimal("950.00"),
+        netAmount: new Prisma.Decimal("8550.00"),
       },
     ],
   });

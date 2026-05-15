@@ -86,19 +86,6 @@ export function DriverSidebar() {
           );
         })}
       </nav>
-
-      {/* Footer — driver info */}
-      <div className="p-4 border-t border-border">
-        <div className="flex items-center gap-3 px-4 py-3">
-          <div className="w-8 h-8 rounded-lg bg-accent/15 flex items-center justify-center">
-            <span className="text-xs font-bold text-accent">D</span>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-foreground">Driver</p>
-            <p className="text-xs text-muted">Trabajador</p>
-          </div>
-        </div>
-      </div>
     </aside>
   );
 }

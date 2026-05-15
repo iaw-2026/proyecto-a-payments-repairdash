@@ -2,6 +2,12 @@ import { MercadoPagoConfig, Payment, Preference } from "mercadopago";
 import type { PaymentResponse } from "mercadopago/dist/clients/payment/commonTypes";
 import type { PreferenceResponse } from "mercadopago/dist/clients/preference/commonTypes";
 
+const EXCLUDED_PAYMENT_TYPES = [
+  { id: "ticket" },
+  { id: "bank_transfer" },
+  { id: "atm" },
+];
+
 function createMercadoPagoClient() {
   const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
 
@@ -43,6 +49,10 @@ export async function createMercadoPagoPreference(input: MercadoPagoPreferenceIn
       payer: input.payerEmail ? { email: input.payerEmail } : undefined,
       external_reference: input.transactionId,
       notification_url: `${baseUrl}/api/payments/webhook`,
+      purpose: "wallet_purchase",
+      payment_methods: {
+        excluded_payment_types: EXCLUDED_PAYMENT_TYPES,
+      },
       back_urls: {
         success: `${baseUrl}/rider/checkout/success?transactionId=${encodeURIComponent(input.transactionId)}`,
         pending: `${baseUrl}/rider/checkout/pending?transactionId=${encodeURIComponent(input.transactionId)}`,
