@@ -186,6 +186,12 @@ export function schedulePendingLiquidations() {
   }, LOCAL_LIQUIDATION_TIMER_MS);
 }
 
+export async function waitAndRunPendingLiquidations() {
+  // TODO: Reemplazar por cron antes de produccion.
+  await new Promise((resolve) => setTimeout(resolve, LOCAL_LIQUIDATION_TIMER_MS));
+  return runPendingLiquidations({ delayMs: 0 });
+}
+
 export async function getDriverLiquidations(
   page: number = 1,
   pageSize: number = 10,
