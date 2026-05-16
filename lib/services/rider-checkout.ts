@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getAuthUser } from "@/lib/auth";
 import type { Prisma } from "@/generated/prisma/client";
 
 export type CheckoutResultKind = "success" | "pending" | "failure";
@@ -24,8 +25,13 @@ export function firstCheckoutSearchValue(value: string | string[] | undefined) {
 export async function getRiderCheckoutResultData(
   transactionId: string,
 ): Promise<CheckoutResultData | null> {
-  const transaction = await prisma.transaction.findUnique({
-    where: { id: transactionId },
+  const { clerkId } = await getAuthUser("rider");
+
+  const transaction = await prisma.transaction.findFirst({
+    where: {
+      id: transactionId,
+      clientId: clerkId,
+    },
   });
 
   if (!transaction) {
