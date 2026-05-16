@@ -286,6 +286,55 @@ RIDER_PAYMENT_CALLBACK_URL="http://localhost:3000/api/mock-rider/payment-result"
 
 Ese endpoint esta en `app/api/mock-rider/payment-result/route.ts`. Debe borrarse cuando Rider App exponga su callback real.
 
+## 3. Consultar Wallet de Trabajador
+
+**Endpoint:** `GET /api/payments/wallet/:trabajadorId`
+
+**App origen:** Repairdash / Rider App  
+**App destino:** Payments App  
+**Objetivo:** consultar el saldo disponible del trabajador y sus metricas de facturacion del dia.
+
+### Headers
+
+```http
+x-internal-api-key: <PAYMENTS_INTERNAL_API_KEY>
+```
+
+### Respuesta Exitosa
+
+Los montos viajan como string decimal con 2 decimales para preservar precision financiera.
+
+```json
+{
+  "trabajadorId": "user_2bX...",
+  "balance": {
+    "disponible": "15450.00"
+  },
+  "metricasHoy": {
+    "facturacionHoy": "4800.00",
+    "trabajosRealizadosHoy": 3
+  }
+}
+```
+
+Status HTTP: `200 OK`.
+
+### Reglas
+
+- `facturacionHoy` suma pagos positivos del trabajador aprobados hoy.
+- `trabajosRealizadosHoy` cuenta esos pagos aprobados hoy.
+- El dia se calcula con horario de Buenos Aires.
+
+### Errores Posibles
+
+#### 401 Unauthorized
+
+Cuando falta o es invalida la API key interna.
+
+#### 404 Not Found
+
+Cuando el trabajador no tiene wallet/balance en Payments.
+
 ### Reintentos
 
 Payments intenta enviar el callback hasta 3 veces si Rider App responde error o no responde.
@@ -297,7 +346,7 @@ Payments intenta enviar el callback hasta 3 veces si Rider App responde error o 
 - `REJECTED`: pago rechazado o cancelado.
 - `REFUNDED`: pago devuelto.
 
-## 3. Flujo Resumido
+## 4. Flujo Resumido
 
 1. Rider App llama `POST /api/payments/checkout`.
 2. Payments crea la transaccion y la preference de Mercado Pago.
