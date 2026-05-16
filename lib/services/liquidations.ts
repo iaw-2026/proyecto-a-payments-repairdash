@@ -84,10 +84,20 @@ export async function runPendingLiquidations({
   const candidates = await prisma.transaction.findMany({
     where: {
       status: TransactionStatus.RESERVED,
-      reservedAt: {
-        lte: cutoff,
-      },
       liquidatedAt: null,
+      OR: [
+        {
+          reservedAt: {
+            lte: cutoff,
+          },
+        },
+        {
+          reservedAt: null,
+          createdAt: {
+            lte: cutoff,
+          },
+        },
+      ],
     },
     orderBy: { reservedAt: "asc" },
   });
@@ -112,6 +122,7 @@ export async function runPendingLiquidations({
         },
         data: {
           status: TransactionStatus.LIQUIDATED,
+          reservedAt: candidate.reservedAt ?? candidate.createdAt,
           liquidatedAt: now,
           commissionRate,
           commissionAmount,
