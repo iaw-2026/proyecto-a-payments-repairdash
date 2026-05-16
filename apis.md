@@ -17,7 +17,7 @@ Payments usa Clerk solo para sesion web de usuarios en la app (`/sign-in`, `/rid
 **App destino:** Payments App  
 **Objetivo:** iniciar el checkout de un trabajo.
 
-Payments crea o reutiliza una transaccion interna por `trabajoId`, crea una preference de Mercado Pago Checkout Pro y redirige al usuario a la pantalla Rider de Payments con el pago seleccionado.
+Payments crea o reutiliza una transaccion interna por `trabajoId`, crea una preference de Mercado Pago Checkout Pro y responde a Rider App con la URL de confirmacion de Payments para ese pago.
 
 El pago no queda aprobado en este endpoint. La confirmacion real llega despues por webhook de Mercado Pago.
 
@@ -52,14 +52,20 @@ x-internal-api-key: <PAYMENTS_INTERNAL_API_KEY>
 
 ### Respuesta Exitosa
 
-Payments responde con redirect:
+Payments responde con JSON. Rider App debe tomar `redirectUrl` y redirigir el navegador del usuario a esa URL.
 
-```http
-303 See Other
-Location: https://payments-app/rider?transactionId=<transactionId>
+```json
+{
+  "success": true,
+  "transactionId": "txn_123",
+  "trabajoId": "trabajo_123",
+  "redirectUrl": "https://payments-app/rider?transactionId=txn_123"
+}
 ```
 
-La pantalla Rider de Payments muestra el resumen del pago. Cuando el usuario confirma, Payments lo redirige a Mercado Pago.
+Status HTTP: `201 Created`.
+
+La pantalla Rider de Payments muestra el resumen del pago. Cuando el usuario confirma, Payments lo envia a Mercado Pago usando el checkout generado internamente.
 
 ### Errores Posibles
 
@@ -72,6 +78,16 @@ Cuando el body no cumple el contrato esperado.
   "success": false,
   "errorCode": "INVALID_CHECKOUT_PAYLOAD",
   "message": "Datos de checkout invalidos."
+}
+```
+
+Tambien aplica cuando `amount` no es mayor a cero.
+
+```json
+{
+  "success": false,
+  "errorCode": "INVALID_AMOUNT",
+  "message": "El monto debe ser mayor a cero."
 }
 ```
 
@@ -285,10 +301,11 @@ Payments intenta enviar el callback hasta 3 veces si Rider App responde error o 
 
 1. Rider App llama `POST /api/payments/checkout`.
 2. Payments crea la transaccion y la preference de Mercado Pago.
-3. Payments redirige a `/rider?transactionId=...`.
-4. El usuario confirma y va a Mercado Pago.
-5. Mercado Pago procesa el pago.
-6. Mercado Pago redirige al usuario a una pantalla de Payments.
-7. Mercado Pago llama el webhook de Payments.
-8. Payments actualiza `Transaction` y `Balance`.
-9. Payments envia el callback a Rider App con `paymentStatus`.
+3. Payments responde `201` con `redirectUrl`.
+4. Rider App redirige al usuario a `redirectUrl`.
+5. El usuario confirma y va a Mercado Pago.
+6. Mercado Pago procesa el pago.
+7. Mercado Pago redirige al usuario a una pantalla de Payments.
+8. Mercado Pago llama el webhook de Payments.
+9. Payments actualiza `Transaction` y `Balance`.
+10. Payments envia el callback a Rider App con `paymentStatus`.

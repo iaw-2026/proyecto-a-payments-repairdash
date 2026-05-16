@@ -155,13 +155,14 @@ No se crean interfaces manuales que dupliquen modelos de la DB (`AGENTS.md` Rule
    - Payments guarda `gatewayPreferenceId` y `gatewayCheckoutUrl`.
    - `external_reference` queda apuntando a `Transaction.id`.
    - `notification_url` apunta a `/api/payments/webhook`.
-5. El endpoint de checkout responde con redirect `303` a `/rider?transactionId=...`.
-6. `app/(app)/rider/page.tsx` muestra el resumen y el boton para continuar a Mercado Pago usando `gatewayCheckoutUrl`.
-7. Cuando el usuario paga, Mercado Pago llama a `POST /api/payments/webhook`.
-8. `app/api/payments/webhook/route.ts` recibe `data.id`, consulta el pago real en Mercado Pago y vuelve a `lib/services/checkout.ts`.
-9. Si el pago esta aprobado, Payments marca la transaccion como `RESERVED`, guarda `gatewayPaymentId` / `reservedAt` y suma el bruto a `Balance.balanceLocked`.
-10. Despues de persistir la DB, Payments avisa a Rider App con `sendRiderPaymentCallback`.
-11. Para desarrollo/MVP, Payments agenda `schedulePendingLiquidations()` con `setTimeout` de 5 segundos.
+5. El endpoint de checkout responde `201` con JSON y `redirectUrl` hacia `/rider?transactionId=...`.
+6. Rider App redirige el navegador del usuario a `redirectUrl`.
+7. `app/(app)/rider/page.tsx` muestra el resumen y el boton para continuar a Mercado Pago usando `gatewayCheckoutUrl`.
+8. Cuando el usuario paga, Mercado Pago llama a `POST /api/payments/webhook`.
+9. `app/api/payments/webhook/route.ts` recibe `data.id`, consulta el pago real en Mercado Pago y vuelve a `lib/services/checkout.ts`.
+10. Si el pago esta aprobado, Payments marca la transaccion como `RESERVED`, guarda `gatewayPaymentId` / `reservedAt` y suma el bruto a `Balance.balanceLocked`.
+11. Despues de persistir la DB, Payments avisa a Rider App con `sendRiderPaymentCallback`.
+12. Para desarrollo/MVP, Payments agenda `schedulePendingLiquidations()` con `setTimeout` de 5 segundos.
 
 ### Flujo de Liquidacion con Comision
 

@@ -65,7 +65,7 @@ export async function POST(request: Request) {
         {
           success: false,
           errorCode: "INVALID_CHECKOUT_PAYLOAD",
-          message: error.issues[0]?.message ?? "Datos de checkout inválidos.",
+          message: error.issues[0]?.message ?? "Datos de checkout invalidos.",
         },
         { status: 400 },
       );
