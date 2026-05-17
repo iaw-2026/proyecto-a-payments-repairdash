@@ -73,6 +73,15 @@ async function main() {
     },
   });
 
+  await prisma.user.create({
+    data: {
+      clerkId: "user_admin_payments_1",
+      email: "admin-payments@example.com",
+      fullName: "Admin Payments Demo",
+      role: "adminPayments",
+    },
+  });
+
   await prisma.commissionSettings.create({
     data: {
       id: "platform",

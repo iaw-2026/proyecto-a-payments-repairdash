@@ -4,8 +4,10 @@ import { getUserRole } from "@/lib/auth";
 
 export async function Topbar() {
   const role = await getUserRole();
-  const roleHref = role === "driver" ? "/driver" : role === "rider" ? "/rider" : null;
-  const roleLabel = role === "driver" ? "Driver" : role === "rider" ? "Rider" : null;
+  const roleHref =
+    role === "driver" ? "/driver" : role === "rider" ? "/rider" : role === "adminPayments" ? "/admin" : null;
+  const roleLabel =
+    role === "driver" ? "Driver" : role === "rider" ? "Rider" : role === "adminPayments" ? "Admin pagos" : null;
 
   return (
     <header className="sticky top-0 z-40 h-topbar border-b border-border bg-background/85 backdrop-blur-xl flex items-center px-6">

@@ -30,7 +30,7 @@ function parseCommissionRate(formData: FormData) {
 
 export async function updateCommissionRate(formData: FormData) {
   try {
-    await getAuthUser("admin");
+    await getAuthUser("adminPayments");
   } catch {
     redirect("/admin/liquidations?error=forbidden");
   }

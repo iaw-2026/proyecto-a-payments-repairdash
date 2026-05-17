@@ -3,10 +3,10 @@ import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { NextRequest } from "next/server";
 
-type ClerkUserRole = "rider" | "driver" | "admin";
+type ClerkUserRole = "rider" | "driver" | "adminPayments";
 
 function parseRole(value: unknown): ClerkUserRole | null {
-  if (value === "rider" || value === "driver" || value === "admin") {
+  if (value === "rider" || value === "driver" || value === "adminPayments") {
     return value;
   }
 
@@ -118,6 +118,27 @@ async function syncDriverUser(input: {
   });
 }
 
+async function syncAdminPaymentsUser(input: {
+  clerkId: string;
+  email: string;
+  fullName: string;
+}) {
+  await prisma.user.upsert({
+    where: { clerkId: input.clerkId },
+    create: {
+      clerkId: input.clerkId,
+      email: input.email,
+      fullName: input.fullName,
+      role: "adminPayments",
+    },
+    update: {
+      email: input.email,
+      fullName: input.fullName,
+      role: "adminPayments",
+    },
+  });
+}
+
 export async function POST(request: NextRequest) {
   let event: Awaited<ReturnType<typeof verifyWebhook>>;
 
@@ -134,7 +155,7 @@ export async function POST(request: NextRequest) {
 
   const role = getMetadataRole(event.data);
 
-  if (role !== "rider" && role !== "driver") {
+  if (role !== "rider" && role !== "driver" && role !== "adminPayments") {
     console.warn("Clerk webhook ignored: role metadata missing", {
       clerkId: event.data.id,
       eventType: event.type,
@@ -162,8 +183,10 @@ export async function POST(request: NextRequest) {
   try {
     if (role === "rider") {
       await syncRiderUser(userInput);
-    } else {
+    } else if (role === "driver") {
       await syncDriverUser(userInput);
+    } else {
+      await syncAdminPaymentsUser(userInput);
     }
 
     return Response.json({ success: true, role });

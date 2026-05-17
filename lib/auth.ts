@@ -2,7 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import type { User } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 
-export type UserRole = "rider" | "driver" | "admin";
+export type UserRole = "rider" | "driver" | "adminPayments";
 
 export type AuthUser = {
   clerkId: string;
@@ -10,7 +10,7 @@ export type AuthUser = {
 };
 
 function isUserRole(role: string): role is UserRole {
-  return role === "rider" || role === "driver" || role === "admin";
+  return role === "rider" || role === "driver" || role === "adminPayments";
 }
 
 export function isAuthenticated(clerkId: string | null | undefined): boolean {

@@ -3,8 +3,10 @@ import { getUserRole } from "@/lib/auth";
 
 export async function RoleNav() {
   const role = await getUserRole();
-  const roleHref = role === "driver" ? "/driver" : role === "rider" ? "/rider" : null;
-  const roleLabel = role === "driver" ? "Driver" : role === "rider" ? "Rider" : null;
+  const roleHref =
+    role === "driver" ? "/driver" : role === "rider" ? "/rider" : role === "adminPayments" ? "/admin" : null;
+  const roleLabel =
+    role === "driver" ? "Driver" : role === "rider" ? "Rider" : role === "adminPayments" ? "Admin pagos" : null;
 
   if (!roleHref || !roleLabel) {
     return null;

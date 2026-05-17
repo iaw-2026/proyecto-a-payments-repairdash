@@ -12,5 +12,9 @@ export default async function DashboardPage() {
     redirect("/rider");
   }
 
+  if (role === "adminPayments") {
+    redirect("/admin");
+  }
+
   redirect("/");
 }
