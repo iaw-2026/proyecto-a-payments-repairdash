@@ -171,21 +171,21 @@ export function mapTransactionStatusToRiderEstado(status: TransactionStatus): Ri
 
 function getRiderTravelId(trabajoId: string) {
   if (!/^\d+$/.test(trabajoId)) {
-    throw new CheckoutError(
-      "INVALID_RIDER_TRAVEL_ID",
-      "trabajoId debe ser numerico para notificar a Rider App como id_viaje.",
-      500,
+    console.warn(
+      `Rider payment callback skipped: trabajoId "${trabajoId}" cannot be sent as numeric id_viaje.`,
     );
+
+    return null;
   }
 
   const idViaje = Number(trabajoId);
 
   if (!Number.isSafeInteger(idViaje)) {
-    throw new CheckoutError(
-      "INVALID_RIDER_TRAVEL_ID",
-      "trabajoId excede el rango seguro para notificar a Rider App como id_viaje.",
-      500,
+    console.warn(
+      `Rider payment callback skipped: trabajoId "${trabajoId}" exceeds the safe integer range for id_viaje.`,
     );
+
+    return null;
   }
 
   return idViaje;
@@ -201,8 +201,14 @@ function buildCallbackPayload(args: {
     return null;
   }
 
+  const idViaje = getRiderTravelId(args.trabajoId);
+
+  if (idViaje === null) {
+    return null;
+  }
+
   return {
-    id_viaje: getRiderTravelId(args.trabajoId),
+    id_viaje: idViaje,
     estado,
   };
 }
