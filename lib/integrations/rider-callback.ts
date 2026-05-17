@@ -6,7 +6,7 @@ async function wait(ms: number) {
 
 export async function sendRiderPaymentCallback(payload: RiderPaymentCallbackPayload) {
   const callbackUrl = process.env.RIDER_PAYMENT_CALLBACK_URL;
-  const apiKey = process.env.RIDER_CALLBACK_API_KEY;
+  const apiKey = process.env.REPAIRDASH_API_KEY?.trim() || process.env.RIDER_CALLBACK_API_KEY?.trim();
 
   if (!callbackUrl || !apiKey) {
     console.warn("Rider payment callback skipped: missing callback URL or API key.");
@@ -24,10 +24,10 @@ export async function sendRiderPaymentCallback(payload: RiderPaymentCallbackPayl
 
     try {
       const response = await fetch(callbackUrl, {
-        method: "POST",
+        method: "PUT",
         headers: {
           "content-type": "application/json",
-          "x-internal-api-key": apiKey,
+          "x-api-key": apiKey,
         },
         body,
         signal: AbortSignal.timeout(5000),

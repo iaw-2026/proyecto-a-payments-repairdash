@@ -36,7 +36,7 @@ export async function POST(request: Request) {
       success: true,
       transactionId: result.transaction.id,
       trabajoId: result.transaction.trabajoId,
-      paymentStatus: result.callbackPayload.paymentStatus,
+      riderCallbackPayload: result.callbackPayload,
     });
   } catch (error) {
     if (error instanceof CheckoutError) {

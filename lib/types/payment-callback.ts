@@ -1,9 +1,6 @@
-export type RiderPaymentStatus = "PENDING" | "APPROVED" | "REJECTED" | "REFUNDED";
+export type RiderPaymentEstado = "aceptado" | "cancelado";
 
 export type RiderPaymentCallbackPayload = {
-  transactionId: string;
-  trabajoId: string;
-  paymentStatus: RiderPaymentStatus;
-  reason: string | null;
-  paidAt: string | null;
+  id_viaje: number;
+  estado: RiderPaymentEstado;
 };

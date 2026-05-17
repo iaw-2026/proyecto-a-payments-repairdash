@@ -193,7 +193,7 @@ MERCADO_PAGO_ACCESS_TOKEN="TEST-..."
 APP_URL="https://tu-url-publica.ngrok-free.dev"
 PAYMENTS_INTERNAL_API_KEY="..."
 RIDER_PAYMENT_CALLBACK_URL="https://rider-app/api/payments/result"
-RIDER_CALLBACK_API_KEY="..."
+REPAIRDASH_API_KEY="..."
 ```
 
 Para pruebas locales sin Rider App real, `RIDER_PAYMENT_CALLBACK_URL` puede apuntar a un mock local, por ejemplo `http://127.0.0.1:4000/api/payments/result`.

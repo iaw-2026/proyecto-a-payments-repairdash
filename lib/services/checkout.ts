@@ -3,7 +3,7 @@ import { getMercadoPagoPayment, createMercadoPagoPreference } from "@/lib/integr
 import { sendRiderPaymentCallback } from "@/lib/integrations/rider-callback";
 import { prisma } from "@/lib/prisma";
 import { waitAndRunPendingLiquidations } from "@/lib/services/liquidations";
-import type { RiderPaymentCallbackPayload, RiderPaymentStatus } from "@/lib/types/payment-callback";
+import type { RiderPaymentCallbackPayload, RiderPaymentEstado } from "@/lib/types/payment-callback";
 import type { CheckoutInput } from "@/lib/validations/checkout";
 import { validateCheckout } from "@/lib/validations/checkout";
 import type { PaymentResponse } from "mercadopago/dist/clients/payment/commonTypes";
@@ -91,20 +91,12 @@ export async function createCheckout(inputData: unknown, baseUrl: string): Promi
       throw new CheckoutError("PAYMENT_ALREADY_COMPLETED", "El pago de este trabajo ya fue confirmado.", 409);
     }
 
-    if (transaction.status === TransactionStatus.DISPUTED || transaction.status === TransactionStatus.REFUNDED) {
+    if (
+      transaction.status === TransactionStatus.DISPUTED ||
+      transaction.status === TransactionStatus.REFUNDED ||
+      transaction.status === TransactionStatus.FAILED
+    ) {
       throw new CheckoutError("PAYMENT_NOT_RETRYABLE", "El pago de este trabajo no puede reintentarse.", 409);
-    }
-
-    if (transaction.status === TransactionStatus.FAILED) {
-      transaction = await prisma.transaction.update({
-        where: { id: transaction.id },
-        data: {
-          status: TransactionStatus.PENDING,
-          gatewayPreferenceId: null,
-          gatewayCheckoutUrl: null,
-          gatewayPaymentId: null,
-        },
-      });
     }
 
     if (transaction.gatewayPreferenceId && transaction.gatewayCheckoutUrl) {
@@ -171,26 +163,47 @@ export function mapMercadoPagoStatusToTransactionStatus(status: string | undefin
   return TransactionStatus.PENDING;
 }
 
-export function mapTransactionStatusToRiderStatus(status: TransactionStatus): RiderPaymentStatus {
-  if (status === TransactionStatus.RESERVED || status === TransactionStatus.LIQUIDATED) return "APPROVED";
-  if (status === TransactionStatus.FAILED) return "REJECTED";
-  if (status === TransactionStatus.REFUNDED) return "REFUNDED";
-  return "PENDING";
+export function mapTransactionStatusToRiderEstado(status: TransactionStatus): RiderPaymentEstado | null {
+  if (status === TransactionStatus.RESERVED || status === TransactionStatus.LIQUIDATED) return "aceptado";
+  if (status === TransactionStatus.FAILED || status === TransactionStatus.REFUNDED) return "cancelado";
+  return null;
+}
+
+function getRiderTravelId(trabajoId: string) {
+  if (!/^\d+$/.test(trabajoId)) {
+    throw new CheckoutError(
+      "INVALID_RIDER_TRAVEL_ID",
+      "trabajoId debe ser numerico para notificar a Rider App como id_viaje.",
+      500,
+    );
+  }
+
+  const idViaje = Number(trabajoId);
+
+  if (!Number.isSafeInteger(idViaje)) {
+    throw new CheckoutError(
+      "INVALID_RIDER_TRAVEL_ID",
+      "trabajoId excede el rango seguro para notificar a Rider App como id_viaje.",
+      500,
+    );
+  }
+
+  return idViaje;
 }
 
 function buildCallbackPayload(args: {
-  transactionId: string;
   trabajoId: string;
   status: TransactionStatus;
-  reason: string | null;
-  paidAt: string | null;
-}): RiderPaymentCallbackPayload {
+}): RiderPaymentCallbackPayload | null {
+  const estado = mapTransactionStatusToRiderEstado(args.status);
+
+  if (!estado) {
+    return null;
+  }
+
   return {
-    transactionId: args.transactionId,
-    trabajoId: args.trabajoId,
-    paymentStatus: mapTransactionStatusToRiderStatus(args.status),
-    reason: args.reason,
-    paidAt: args.paidAt,
+    id_viaje: getRiderTravelId(args.trabajoId),
+    estado,
   };
 }
 
@@ -203,8 +216,6 @@ export async function processMercadoPagoPayment(payment: PaymentResponse) {
 
   const nextStatus = mapMercadoPagoStatusToTransactionStatus(payment.status);
   const gatewayPaymentId = payment.id ? String(payment.id) : null;
-  const statusReason = payment.status_detail ?? null;
-  const paidAt = payment.date_approved ?? null;
 
   const updatedTransaction = await prisma.$transaction(async (tx) => {
     const transaction = await tx.transaction.findUnique({
@@ -267,16 +278,15 @@ export async function processMercadoPagoPayment(payment: PaymentResponse) {
   });
 
   const callbackPayload = buildCallbackPayload({
-    transactionId: updatedTransaction.id,
     trabajoId: updatedTransaction.trabajoId,
     status: updatedTransaction.status,
-    reason: statusReason,
-    paidAt,
   });
 
   // Primero persistimos el estado interno; recién después notificamos a Rider.
   // Si el callback falla, Payments conserva la fuente de verdad.
-  await sendRiderPaymentCallback(callbackPayload);
+  if (callbackPayload) {
+    await sendRiderPaymentCallback(callbackPayload);
+  }
 
   if (updatedTransaction.status === TransactionStatus.RESERVED) {
     await waitAndRunPendingLiquidations();
