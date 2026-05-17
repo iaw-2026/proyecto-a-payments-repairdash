@@ -169,28 +169,6 @@ export function mapTransactionStatusToRiderEstado(status: TransactionStatus): Ri
   return null;
 }
 
-function getRiderTravelId(trabajoId: string) {
-  if (!/^\d+$/.test(trabajoId)) {
-    console.warn(
-      `Rider payment callback skipped: trabajoId "${trabajoId}" cannot be sent as numeric id_viaje.`,
-    );
-
-    return null;
-  }
-
-  const idViaje = Number(trabajoId);
-
-  if (!Number.isSafeInteger(idViaje)) {
-    console.warn(
-      `Rider payment callback skipped: trabajoId "${trabajoId}" exceeds the safe integer range for id_viaje.`,
-    );
-
-    return null;
-  }
-
-  return idViaje;
-}
-
 function buildCallbackPayload(args: {
   trabajoId: string;
   status: TransactionStatus;
@@ -201,14 +179,8 @@ function buildCallbackPayload(args: {
     return null;
   }
 
-  const idViaje = getRiderTravelId(args.trabajoId);
-
-  if (idViaje === null) {
-    return null;
-  }
-
   return {
-    id_viaje: idViaje,
+    id_viaje: args.trabajoId,
     estado,
   };
 }

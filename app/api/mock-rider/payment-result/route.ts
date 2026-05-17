@@ -12,8 +12,8 @@ export async function PUT(request: Request) {
   if (
     !payload ||
     typeof payload !== "object" ||
-    typeof payload.id_viaje !== "number" ||
-    !Number.isSafeInteger(payload.id_viaje) ||
+    (typeof payload.id_viaje !== "string" && typeof payload.id_viaje !== "number") ||
+    String(payload.id_viaje).trim().length === 0 ||
     (payload.estado !== "aceptado" && payload.estado !== "cancelado")
   ) {
     return NextResponse.json({ message: "Estado no valido" }, { status: 400 });

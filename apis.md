@@ -236,7 +236,7 @@ x-api-key: <REPAIRDASH_API_KEY>
 
 ```json
 {
-  "id_viaje": 123,
+  "id_viaje": "trabajo_test_202605121",
   "estado": "aceptado"
 }
 ```
@@ -245,7 +245,7 @@ x-api-key: <REPAIRDASH_API_KEY>
 
 ```json
 {
-  "id_viaje": 123,
+  "id_viaje": "trabajo_test_202605121",
   "estado": "cancelado"
 }
 ```

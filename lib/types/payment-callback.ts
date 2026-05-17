@@ -1,6 +1,6 @@
 export type RiderPaymentEstado = "aceptado" | "cancelado";
 
 export type RiderPaymentCallbackPayload = {
-  id_viaje: number;
+  id_viaje: string;
   estado: RiderPaymentEstado;
 };
