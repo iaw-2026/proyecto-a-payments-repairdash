@@ -1,9 +1,6 @@
-"use client";
+import { AppSidebar, type AppSidebarItem } from "@/components/layout/AppSidebar";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-
-const navItems = [
+const navItems: AppSidebarItem[] = [
   {
     href: "/driver",
     label: "Dashboard",
@@ -50,42 +47,12 @@ const navItems = [
 ];
 
 export function DriverSidebar() {
-  const pathname = usePathname();
-
   return (
-    <aside className="hidden lg:flex flex-col w-sidebar border-r border-border bg-[var(--color-sidebar)] shrink-0">
-      {/* Logo */}
-      <div className="h-topbar flex items-center px-6 border-b border-border">
-        <Link href="/" className="text-sm font-semibold tracking-[0.2em] uppercase text-foreground">
-          Repairdash
-        </Link>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1">
-        {navItems.map((item) => {
-          const isActive =
-            item.href === "/driver"
-              ? pathname === "/driver"
-              : pathname.startsWith(item.href);
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200
-                ${
-                  isActive
-                    ? "bg-accent-subtle text-accent shadow-[inset_0_0_0_1px_rgba(245,0,241,0.15)]"
-                    : "text-muted hover:text-secondary hover:bg-white/5"
-                }`}
-            >
-              {item.icon}
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
-    </aside>
+    <AppSidebar
+      homeHref="/driver"
+      title="Repairdash"
+      items={navItems}
+      mobile="hidden"
+    />
   );
 }

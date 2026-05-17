@@ -1,15 +1,36 @@
-import Link from "next/link";
+import { AdminCommissionAction } from "@/components/admin/AdminCommissionAction";
+import { AdminDashboardMetrics } from "@/components/admin/AdminDashboardMetrics";
+import { AdminRefreshControls } from "@/components/admin/AdminRefreshControls";
+import { getAdminDashboardData } from "@/lib/services/admin";
 
-export default function AdminPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AdminPage() {
+  const { settings, metrics } = await getAdminDashboardData();
+
   return (
-    <div className="mx-auto max-w-4xl px-6 py-10 text-slate-100">
-      <div className="rounded-[2rem] border border-white/10 bg-slate-950/70 p-8 backdrop-blur-xl">
-        <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Admin</p>
-        <h1 className="mt-3 text-3xl font-semibold text-white">Métricas generales</h1>
-        <p className="mt-3 text-slate-300">Panel reservado para la vista administrativa.</p>
-        <Link href="/" className="mt-6 inline-flex rounded-full bg-cyan-300 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200">
-          Volver al inicio
-        </Link>
+    <div className="max-w-6xl space-y-8 animate-fade-in">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-muted">
+            Admin
+          </p>
+          <h1 className="mt-2 text-3xl font-bold text-foreground">
+            Dashboard
+          </h1>
+          <p className="mt-1 text-secondary">
+            Resumen operativo de Payments y configuracion vigente.
+          </p>
+        </div>
+
+        <AdminRefreshControls />
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <AdminDashboardMetrics metrics={metrics} />
+        <AdminCommissionAction
+          currentRate={settings.commissionRate.toFixed(2)}
+        />
       </div>
     </div>
   );
