@@ -1,4 +1,5 @@
 import { TransactionStatus } from "@/generated/prisma/client";
+import { getAuthUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { RiderDashboardData } from "@/lib/types/rider-dashboard";
 
@@ -13,8 +14,9 @@ export async function getRiderDashboardData({
   page = 1,
   pageSize = 10,
 }: GetRiderDashboardDataInput = {}): Promise<RiderDashboardData> {
-  const rider = await prisma.user.findFirst({
-    where: { role: "rider" },
+  const { clerkId } = await getAuthUser("rider");
+  const rider = await prisma.user.findUnique({
+    where: { clerkId },
     include: { cliente: true },
   });
 

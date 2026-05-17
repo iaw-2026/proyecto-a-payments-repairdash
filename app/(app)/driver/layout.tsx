@@ -1,11 +1,19 @@
 import { DriverSidebar } from "@/components/layout/DriverSidebar";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
+import { getAuthUser } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
-export default function DriverLayout({
+export default async function DriverLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  try {
+    await getAuthUser("driver");
+  } catch {
+    redirect("/dashboard");
+  }
+
   return (
     <div className="flex min-h-[calc(100vh-var(--spacing-topbar))]">
       <DriverSidebar />

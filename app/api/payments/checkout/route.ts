@@ -45,17 +45,27 @@ export async function POST(request: Request) {
       );
     }
 
+    const baseUrl = getBaseUrl(request);
     const body = await request.json();
-    const checkout = await createCheckout(body, getBaseUrl(request));
+    const checkout = await createCheckout(body, baseUrl);
+    const redirectUrl = buildRiderConfirmationUrl(baseUrl, checkout.transactionId).toString();
 
-    return NextResponse.redirect(buildRiderConfirmationUrl(getBaseUrl(request), checkout.transactionId), { status: 303 });
+    return NextResponse.json(
+      {
+        success: checkout.success,
+        transactionId: checkout.transactionId,
+        trabajoId: checkout.trabajoId,
+        redirectUrl,
+      },
+      { status: 201 },
+    );
   } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json(
         {
           success: false,
           errorCode: "INVALID_CHECKOUT_PAYLOAD",
-          message: error.issues[0]?.message ?? "Datos de checkout inválidos.",
+          message: error.issues[0]?.message ?? "Datos de checkout invalidos.",
         },
         { status: 400 },
       );

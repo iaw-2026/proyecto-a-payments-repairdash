@@ -16,6 +16,9 @@
 - [ ] Vista de Liquidaciones (`/driver/liquidations`)
 - [ ] Panel Admin (`/admin`)
 - [ ] Filtros por estado y fecha en el historial de retiros (server-side)
+## Autorizacion
+- [ ] hashear api keys
+
 
 ## 🧪 Testing
 

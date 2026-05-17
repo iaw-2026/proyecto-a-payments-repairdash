@@ -16,12 +16,13 @@ app/
 │   │   │   ├── page.tsx             # Historial de retiros (paginación server-side)
 │   │   │   └── loading.tsx          # Skeleton de tabla
 │   │   └── liquidations/
-│   │       └── page.tsx             # Placeholder
+│   │       └── page.tsx             # Historial de liquidaciones
 │   ├── rider/                       # Placeholder
 │   ├── admin/                       # Placeholder
 │   └── dashboard/                   # Placeholder
 ├── actions/
-│   └── withdrawals.ts               # Server Action: solicitar retiro
+│   ├── withdrawals.ts               # Server Action: solicitar retiro
+│   └── liquidations.ts              # Server Action: actualizar comision
 ├── api/
 │   └── payments/                    # API routes (placeholders)
 ├── sign-in/                         # Auth pages (placeholder)
@@ -59,6 +60,7 @@ lib/
 │   ├── withdrawals.ts
 │   ├── balances.ts
 │   ├── transactions.ts
+│   ├── liquidations.ts              # Liquidar RESERVED -> LIQUIDATED
 │   └── users.ts
 ├── mocks/                           # Datos mock para desarrollo
 ├── validations/                     # Esquemas de validación
@@ -153,23 +155,36 @@ No se crean interfaces manuales que dupliquen modelos de la DB (`AGENTS.md` Rule
    - Payments guarda `gatewayPreferenceId` y `gatewayCheckoutUrl`.
    - `external_reference` queda apuntando a `Transaction.id`.
    - `notification_url` apunta a `/api/payments/webhook`.
-5. El endpoint de checkout responde con redirect `303` a `/rider?transactionId=...`.
-6. `app/(app)/rider/page.tsx` muestra el resumen y el boton para continuar a Mercado Pago usando `gatewayCheckoutUrl`.
-7. Cuando el usuario paga, Mercado Pago llama a `POST /api/payments/webhook`.
-8. `app/api/payments/webhook/route.ts` recibe `data.id`, consulta el pago real en Mercado Pago y vuelve a `lib/services/checkout.ts`.
-9. Si el pago esta aprobado, Payments marca la transaccion como `RESERVED`, guarda `gatewayPaymentId` y suma el monto a `Balance.balanceLocked`.
-10. Despues de persistir la DB, Payments avisa a Rider App con `sendRiderPaymentCallback`.
+5. El endpoint de checkout responde `201` con JSON y `redirectUrl` hacia `/rider?transactionId=...`.
+6. Rider App redirige el navegador del usuario a `redirectUrl`.
+7. `app/(app)/rider/page.tsx` muestra el resumen y el boton para continuar a Mercado Pago usando `gatewayCheckoutUrl`.
+8. Cuando el usuario paga, Mercado Pago llama a `POST /api/payments/webhook`.
+9. `app/api/payments/webhook/route.ts` recibe `data.id`, consulta el pago real en Mercado Pago y vuelve a `lib/services/checkout.ts`.
+10. Si el pago esta aprobado, Payments marca la transaccion como `RESERVED`, guarda `gatewayPaymentId` / `reservedAt` y suma el bruto a `Balance.balanceLocked`.
+11. Despues de persistir la DB, Payments avisa a Rider App con `sendRiderPaymentCallback`.
+12. Para desarrollo/MVP, Payments agenda `schedulePendingLiquidations()` con `setTimeout` de 5 segundos.
+
+### Flujo de Liquidacion con Comision
+
+1. `lib/services/checkout.ts` recibe pago aprobado y guarda el bruto en `balanceLocked`.
+2. `schedulePendingLiquidations()` espera 5 segundos y llama `runPendingLiquidations({ delayMs: 0 })`.
+3. `lib/services/liquidations.ts` busca transacciones `RESERVED`, lee `CommissionSettings` y calcula bruto, comision y neto con `Prisma.Decimal`.
+4. En una transaccion atomica, marca la `Transaction` como `LIQUIDATED`, guarda `commissionRate`, `commissionAmount`, `netAmount` y `liquidatedAt`.
+5. En esa misma transaccion, mueve saldo: resta el bruto de `Balance.balanceLocked` y suma el neto a `Balance.balanceAvailable`.
+6. Antes de produccion, reemplazar el `setTimeout` por el endpoint protegido `POST /api/cron/liquidations`.
 
 ### Archivos principales
 | Archivo | Responsabilidad |
 |---|---|
 | `lib/services/checkout.ts` | Reglas de negocio del checkout, idempotencia por `trabajoId`, procesamiento de webhook y actualizacion de balances. |
+| `lib/services/liquidations.ts` | Reglas de liquidacion, calculo de comision y movimiento de `balanceLocked` a `balanceAvailable`. |
 | `lib/integrations/mercadopago.ts` | Conexion con SDK de Mercado Pago para crear preferences y consultar pagos. |
 | `lib/integrations/rider-callback.ts` | POST server-to-server hacia Rider App con el resultado del pago. |
 | `lib/validations/checkout.ts` | Validacion Zod del contrato de checkout. |
 | `lib/internal-auth.ts` | Validacion de `x-internal-api-key` para endpoints internos. |
 | `app/api/payments/checkout/route.ts` | Endpoint externo llamado por Rider App para iniciar el checkout. |
 | `app/api/payments/webhook/route.ts` | Endpoint llamado por Mercado Pago con notificaciones de pago. |
+| `app/api/cron/liquidations/route.ts` | Endpoint protegido para reemplazar el timer por cron antes de produccion. |
 | `app/(app)/rider/page.tsx` | Pantalla Rider y confirmacion previa a Mercado Pago. |
 
 ### Variables de entorno
@@ -178,7 +193,7 @@ MERCADO_PAGO_ACCESS_TOKEN="TEST-..."
 APP_URL="https://tu-url-publica.ngrok-free.dev"
 PAYMENTS_INTERNAL_API_KEY="..."
 RIDER_PAYMENT_CALLBACK_URL="https://rider-app/api/payments/result"
-RIDER_CALLBACK_API_KEY="..."
+REPAIRDASH_API_KEY="..."
 ```
 
 Para pruebas locales sin Rider App real, `RIDER_PAYMENT_CALLBACK_URL` puede apuntar a un mock local, por ejemplo `http://127.0.0.1:4000/api/payments/result`.
@@ -189,6 +204,6 @@ Para pruebas locales sin Rider App real, `RIDER_PAYMENT_CALLBACK_URL` puede apun
 
 - [ ] Integrar Clerk (reemplazar `mock-auth.ts`)
 - [ ] Completar pantallas finales de retorno Mercado Pago (`success`, `pending`, `failure`)
-- [ ] Vista de Liquidaciones
-- [ ] Panel Admin
+- [x] Vista de Liquidaciones
+- [x] Panel Admin basico de comision
 - [ ] Tests

@@ -1,5 +1,14 @@
 # APIs Payments App - Checkout Pro
 
+## Autenticacion
+
+Payments usa Clerk solo para sesion web de usuarios en la app (`/sign-in`, `/rider`, `/driver`, `/dashboard`). Las llamadas server-to-server entre apps no usan JWT de Clerk: siguen usando `x-internal-api-key`.
+
+- Rider App -> Payments: `x-internal-api-key: <PAYMENTS_INTERNAL_API_KEY>`.
+- Payments -> Rider App callback: `x-api-key: <REPAIRDASH_API_KEY>`.
+- Clerk -> Payments webhook: firma verificada con `CLERK_WEBHOOK_SIGNING_SECRET`.
+- Mercado Pago -> Payments webhook: notificacion publica de Mercado Pago, luego Payments consulta el pago real en Mercado Pago.
+
 ## 1. Iniciar Pago
 
 **Endpoint:** `POST /api/payments/checkout`
@@ -8,7 +17,7 @@
 **App destino:** Payments App  
 **Objetivo:** iniciar el checkout de un trabajo.
 
-Payments crea o reutiliza una transaccion interna por `trabajoId`, crea una preference de Mercado Pago Checkout Pro y redirige al usuario a la pantalla Rider de Payments con el pago seleccionado.
+Payments crea o reutiliza una transaccion interna por `trabajoId`, crea una preference de Mercado Pago Checkout Pro y responde a Rider App con la URL de confirmacion de Payments para ese pago.
 
 El pago no queda aprobado en este endpoint. La confirmacion real llega despues por webhook de Mercado Pago.
 
@@ -43,14 +52,20 @@ x-internal-api-key: <PAYMENTS_INTERNAL_API_KEY>
 
 ### Respuesta Exitosa
 
-Payments responde con redirect:
+Payments responde con JSON. Rider App debe tomar `redirectUrl` y redirigir el navegador del usuario a esa URL.
 
-```http
-303 See Other
-Location: https://payments-app/rider?transactionId=<transactionId>
+```json
+{
+  "success": true,
+  "transactionId": "txn_123",
+  "trabajoId": "trabajo_123",
+  "redirectUrl": "https://payments-app/rider?transactionId=txn_123"
+}
 ```
 
-La pantalla Rider de Payments muestra el resumen del pago. Cuando el usuario confirma, Payments lo redirige a Mercado Pago.
+Status HTTP: `201 Created`.
+
+La pantalla Rider de Payments muestra el resumen del pago. Cuando el usuario confirma, Payments lo envia a Mercado Pago usando el checkout generado internamente.
 
 ### Errores Posibles
 
@@ -63,6 +78,16 @@ Cuando el body no cumple el contrato esperado.
   "success": false,
   "errorCode": "INVALID_CHECKOUT_PAYLOAD",
   "message": "Datos de checkout invalidos."
+}
+```
+
+Tambien aplica cuando `amount` no es mayor a cero.
+
+```json
+{
+  "success": false,
+  "errorCode": "INVALID_AMOUNT",
+  "message": "El monto debe ser mayor a cero."
 }
 ```
 
@@ -190,7 +215,7 @@ Cuando Mercado Pago no devuelve una preference o una URL de checkout valida.
 
 **Endpoint:** definido por Rider App y configurado en Payments como `RIDER_PAYMENT_CALLBACK_URL`.
 
-**Ejemplo:** `POST https://rider-app/api/payments/result`
+**Ejemplo:** `PUT https://rider-app/api/repairdash/statepayment`
 
 **App origen:** Payments App  
 **App destino:** Rider App  
@@ -204,18 +229,15 @@ Rider App debe procesar este callback de forma idempotente, porque Mercado Pago 
 
 ```http
 content-type: application/json
-x-internal-api-key: <RIDER_CALLBACK_API_KEY>
+x-api-key: <REPAIRDASH_API_KEY>
 ```
 
 ### Payload Aprobado
 
 ```json
 {
-  "transactionId": "txn_123",
-  "trabajoId": "trabajo_123",
-  "paymentStatus": "APPROVED",
-  "reason": "accredited",
-  "paidAt": "2026-05-10T04:19:28.000Z"
+  "id_viaje": "trabajo_test_202605121",
+  "estado": "aceptado"
 }
 ```
 
@@ -223,23 +245,8 @@ x-internal-api-key: <RIDER_CALLBACK_API_KEY>
 
 ```json
 {
-  "transactionId": "txn_123",
-  "trabajoId": "trabajo_123",
-  "paymentStatus": "REJECTED",
-  "reason": "cc_rejected_other_reason",
-  "paidAt": null
-}
-```
-
-### Payload Pendiente
-
-```json
-{
-  "transactionId": "txn_123",
-  "trabajoId": "trabajo_123",
-  "paymentStatus": "PENDING",
-  "reason": "waiting_payment_confirmation",
-  "paidAt": null
+  "id_viaje": "trabajo_test_202605121",
+  "estado": "cancelado"
 }
 ```
 
@@ -247,7 +254,7 @@ x-internal-api-key: <RIDER_CALLBACK_API_KEY>
 
 ```json
 {
-  "ok": true
+  "message": "Viaje aceptado"
 }
 ```
 
@@ -261,25 +268,73 @@ RIDER_PAYMENT_CALLBACK_URL="http://localhost:3000/api/mock-rider/payment-result"
 
 Ese endpoint esta en `app/api/mock-rider/payment-result/route.ts`. Debe borrarse cuando Rider App exponga su callback real.
 
+## 3. Consultar Wallet de Trabajador
+
+**Endpoint:** `GET /api/payments/wallet/:trabajadorId`
+
+**App origen:** Repairdash / Rider App  
+**App destino:** Payments App  
+**Objetivo:** consultar el saldo disponible del trabajador y sus metricas de facturacion del dia.
+
+### Headers
+
+```http
+x-internal-api-key: <PAYMENTS_INTERNAL_API_KEY>
+```
+
+### Respuesta Exitosa
+
+Los montos viajan como string decimal con 2 decimales para preservar precision financiera.
+
+```json
+{
+  "trabajadorId": "user_2bX...",
+  "balance": {
+    "disponible": "15450.00"
+  },
+  "metricasHoy": {
+    "facturacionHoy": "4800.00",
+    "trabajosRealizadosHoy": 3
+  }
+}
+```
+
+Status HTTP: `200 OK`.
+
+### Reglas
+
+- `facturacionHoy` suma pagos positivos del trabajador aprobados hoy.
+- `trabajosRealizadosHoy` cuenta esos pagos aprobados hoy.
+- El dia se calcula con horario de Buenos Aires.
+
+### Errores Posibles
+
+#### 401 Unauthorized
+
+Cuando falta o es invalida la API key interna.
+
+#### 404 Not Found
+
+Cuando el trabajador no tiene wallet/balance en Payments.
+
 ### Reintentos
 
 Payments intenta enviar el callback hasta 3 veces si Rider App responde error o no responde.
 
-### Estados Posibles de `paymentStatus`
+### Estados Posibles de `estado`
 
-- `PENDING`: pago pendiente o en proceso.
-- `APPROVED`: pago acreditado.
-- `REJECTED`: pago rechazado o cancelado.
-- `REFUNDED`: pago devuelto.
+- `aceptado`: pago acreditado.
+- `cancelado`: pago rechazado, cancelado o devuelto.
 
-## 3. Flujo Resumido
+## 4. Flujo Resumido
 
 1. Rider App llama `POST /api/payments/checkout`.
 2. Payments crea la transaccion y la preference de Mercado Pago.
-3. Payments redirige a `/rider?transactionId=...`.
-4. El usuario confirma y va a Mercado Pago.
-5. Mercado Pago procesa el pago.
-6. Mercado Pago redirige al usuario a una pantalla de Payments.
-7. Mercado Pago llama el webhook de Payments.
-8. Payments actualiza `Transaction` y `Balance`.
-9. Payments envia el callback a Rider App con `paymentStatus`.
+3. Payments responde `201` con `redirectUrl`.
+4. Rider App redirige al usuario a `redirectUrl`.
+5. El usuario confirma y va a Mercado Pago.
+6. Mercado Pago procesa el pago.
+7. Mercado Pago redirige al usuario a una pantalla de Payments.
+8. Mercado Pago llama el webhook de Payments.
+9. Payments actualiza `Transaction` y `Balance`.
+10. Payments envia el callback a Rider App con `estado`.

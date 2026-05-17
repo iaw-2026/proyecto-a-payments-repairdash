@@ -37,7 +37,7 @@ model Cliente {
 
 model Trabajador {
   clerkId      String  @id
-  cbuCvu       String
+  cbuCvu       String?
   user         User    @relation(fields: [clerkId], references: [clerkId])
   balance      Balance?
   withdrawals  Withdrawal[]
@@ -54,6 +54,17 @@ model Transaction {
   gatewayCheckoutUrl  String?
   gatewayPaymentId    String?
   createdAt           DateTime          @default(now())
+  reservedAt          DateTime?
+  liquidatedAt        DateTime?
+  commissionRate      Decimal?          @db.Decimal(5,2)
+  commissionAmount    Decimal?          @db.Decimal(12,2)
+  netAmount           Decimal?          @db.Decimal(12,2)
+}
+
+model CommissionSettings {
+  id             String   @id
+  commissionRate Decimal  @db.Decimal(5,2)
+  updatedAt      DateTime @updatedAt
 }
 
 model Balance {

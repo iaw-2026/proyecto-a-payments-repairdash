@@ -5,7 +5,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { Prisma, TransactionStatus, Withdrawal } from "@/generated/prisma/client";
-import { getAuthUser } from "@/lib/mock-auth";
+import { getAuthUser } from "@/lib/auth";
 import { randomUUID } from "crypto";
 
 /**
@@ -105,7 +105,7 @@ export async function getWithdrawals(
   page: number = 1,
   pageSize: number = 10,
 ): Promise<PaginatedWithdrawals> {
-  const { clerkId } = await getAuthUser();
+  const { clerkId } = await getAuthUser("driver");
 
   // Asegurar valores mínimos válidos
   const safePageSize = Math.max(1, Math.min(50, Math.floor(pageSize)));

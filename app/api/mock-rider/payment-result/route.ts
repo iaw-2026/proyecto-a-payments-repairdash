@@ -1,15 +1,32 @@
 import { NextResponse } from "next/server";
 
-export async function POST(request: Request) {
-  const apiKey = request.headers.get("x-internal-api-key");
+export async function PUT(request: Request) {
+  const apiKey = request.headers.get("x-api-key");
+  const expectedApiKey = process.env.REPAIRDASH_API_KEY?.trim() || process.env.RIDER_CALLBACK_API_KEY?.trim();
   const payload = await request.json();
 
+  if (expectedApiKey && apiKey !== expectedApiKey) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
+  if (
+    !payload ||
+    typeof payload !== "object" ||
+    (typeof payload.id_viaje !== "string" && typeof payload.id_viaje !== "number") ||
+    String(payload.id_viaje).trim().length === 0 ||
+    (payload.estado !== "aceptado" && payload.estado !== "cancelado")
+  ) {
+    return NextResponse.json({ message: "Estado no valido" }, { status: 400 });
+  }
+
   // TODO: Borrar este endpoint cuando Rider App exponga su callback real.
-  // Sirve solo para probar que Payments envia el POST con el resultado del pago.
-  console.log("Mock Rider payment result callback", {
+  // Sirve solo para probar que Payments envia el PUT con el estado del pago.
+  console.log("Mock Rider statepayment callback", {
     apiKey,
     payload,
   });
 
-  return NextResponse.json({ ok: true });
+  const message = payload.estado === "aceptado" ? "Viaje aceptado" : "Viaje cancelado";
+
+  return NextResponse.json({ message });
 }

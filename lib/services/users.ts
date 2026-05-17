@@ -4,14 +4,17 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { getAuthUser } from "@/lib/auth";
 
 /**
- * Busca un User por rol e incluye su Trabajador y Balance.
+ * Busca el User driver autenticado e incluye su Trabajador y Balance.
  * Devuelve null si no existe.
  */
-export async function getUserWithBalance(role: string) {
-  const user = await prisma.user.findFirst({
-    where: { role },
+export async function getCurrentDriverWithBalance() {
+  const { clerkId } = await getAuthUser("driver");
+
+  const user = await prisma.user.findUnique({
+    where: { clerkId },
     include: {
       trabajador: {
         include: {
