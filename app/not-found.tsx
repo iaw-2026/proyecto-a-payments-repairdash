@@ -1,6 +1,14 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getUserRole } from "@/lib/auth";
 
-export default function NotFound() {
+export default async function NotFound() {
+  const role = await getUserRole();
+
+  if (role) {
+    redirect("/dashboard");
+  }
+
   return (
     <div className="mx-auto flex min-h-[calc(100vh-73px)] max-w-3xl items-center px-6 py-16 text-slate-100">
       <div className="rounded-[2rem] border border-white/10 bg-slate-950/70 p-8 backdrop-blur-xl">
