@@ -8,17 +8,52 @@ function MetricIcon({ children }: { children: ReactNode }) {
 }
 
 export function AdminDashboardMetrics({
-  metrics,
+  dailyMetrics,
+  monthlyMetrics,
 }: {
-  metrics: AdminDashboardMetricsData;
+  dailyMetrics: AdminDashboardMetricsData;
+  monthlyMetrics: AdminDashboardMetricsData;
 }) {
-  const monthLabel = metrics.monthStart.toLocaleDateString("es-AR", {
-    month: "long",
-    year: "numeric",
-  });
-
   return (
     <div className="space-y-6">
+      <MetricsSection title="Hoy" metrics={dailyMetrics} variant="day" />
+      <MetricsSection
+        title="Mes actual"
+        metrics={monthlyMetrics}
+        variant="month"
+      />
+    </div>
+  );
+}
+
+function MetricsSection({
+  title,
+  metrics,
+  variant,
+}: {
+  title: string;
+  metrics: AdminDashboardMetricsData;
+  variant: "day" | "month";
+}) {
+  const periodLabel =
+    variant === "day"
+      ? metrics.periodStart.toLocaleDateString("es-AR", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        })
+      : metrics.periodStart.toLocaleDateString("es-AR", {
+          month: "long",
+          year: "numeric",
+        });
+  const commissionSubtitle =
+    variant === "day" ? "Cobradas hoy" : "Cobradas este mes";
+
+  return (
+    <section className="space-y-3">
+      <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
+        {title}
+      </h2>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <MetricCard
           icon={
@@ -39,7 +74,7 @@ export function AdminDashboardMetrics({
           label="Volumen bruto"
           value={formatARS(metrics.grossVolume)}
           valueColor="text-foreground"
-          subtitle={monthLabel}
+          subtitle={periodLabel}
         />
         <MetricCard
           icon={
@@ -60,7 +95,7 @@ export function AdminDashboardMetrics({
           label="Comisiones"
           value={formatARS(metrics.commissionCollected)}
           valueColor="text-accent"
-          subtitle="Cobradas este mes"
+          subtitle={commissionSubtitle}
         />
         <MetricCard
           icon={
@@ -82,6 +117,6 @@ export function AdminDashboardMetrics({
           subtitle="Disponible para drivers"
         />
       </div>
-    </div>
+    </section>
   );
 }

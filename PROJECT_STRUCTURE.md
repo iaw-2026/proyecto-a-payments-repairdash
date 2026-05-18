@@ -17,10 +17,11 @@ app/
 │   │   │   └── loading.tsx          # Skeleton de tabla
 │   │   └── liquidations/
 │   │       └── page.tsx             # Historial de liquidaciones
-│   ├── rider/                       # Placeholder
-│   ├── admin/                       # Placeholder
+│   ├── rider/                       # Dashboard y checkout del rider
+│   ├── admin/                       # Dashboard admin, retiros, drivers y riders
 │   └── dashboard/                   # Placeholder
 ├── actions/
+│   ├── admin.ts                     # Server Actions admin (comision)
 │   ├── withdrawals.ts               # Server Action: solicitar retiro
 │   └── liquidations.ts              # Server Action: actualizar comision
 ├── api/
@@ -29,6 +30,13 @@ app/
 └── sign-up/
 
 components/
+├── admin/                           # Componentes del dominio Admin
+│   ├── AdminCommissionAction.tsx     # Card + modal para modificar comision
+│   ├── AdminDashboardMetrics.tsx     # Cards y resumen de metricas admin
+│   ├── AdminTableFilters.tsx         # Filtros reutilizables por searchParams
+│   ├── AdminWithdrawalsTable.tsx     # Tabla responsive de retiros
+│   ├── AdminDriversTable.tsx         # Tabla responsive de drivers
+│   └── AdminRidersTable.tsx          # Tabla responsive de riders
 ├── driver/                          # Componentes del dominio Driver
 │   ├── BalanceCards.tsx              # Tarjetas de saldo (available, locked, earned)
 │   ├── IncomeChart.tsx              # Gráfico de ingresos (Recharts)
@@ -36,6 +44,8 @@ components/
 │   ├── WithdrawalModal.tsx          # Modal para confirmar retiro
 │   └── WithdrawalTable.tsx          # Tabla de historial de retiros
 ├── layout/                          # Shell de la app
+│   ├── AppSidebar.tsx                # Sidebar base reutilizable
+│   ├── AdminSidebar.tsx              # Sidebar admin (items admin)
 │   ├── Topbar.tsx                   # Barra superior
 │   ├── DriverSidebar.tsx            # Sidebar desktop
 │   ├── MobileBottomNav.tsx          # Nav inferior mobile
@@ -58,6 +68,7 @@ lib/
 ├── errors.ts                        # Helpers de error
 ├── services/                        # Lógica de negocio (ver abajo)
 │   ├── withdrawals.ts
+│   ├── admin.ts                     # Queries/agregaciones admin
 │   ├── balances.ts
 │   ├── transactions.ts
 │   ├── liquidations.ts              # Liquidar RESERVED -> LIQUIDATED
@@ -139,6 +150,37 @@ No se crean interfaces manuales que dupliquen modelos de la DB (`AGENTS.md` Rule
 3. Action valida auth + input → llama a `createWithdrawalRequest` (Service).
 4. Service ejecuta transacción atómica: valida saldo → debita balance → crea Withdrawal → crea Transaction.
 5. Action ejecuta `revalidatePath("/driver")` → dashboard se actualiza.
+
+---
+
+## Admin - MVP Operativo
+
+### Rutas
+- `/admin`: dashboard con metricas mensuales, estados de transacciones, saldos agregados y accion rapida para modificar comision.
+- `/admin/withdrawals`: listado paginado de retiros con filtros por busqueda, estado y fechas. No aprueba ni rechaza retiros.
+- `/admin/drivers`: listado paginado de trabajadores con composicion `Trabajador` + `Balance`.
+- `/admin/riders`: listado paginado de clientes/riders con volumen pagado y actividad reciente.
+
+No hay pantalla admin de transacciones ni disputas en el MVP.
+
+### Backend
+- `lib/services/admin.ts` contiene las queries Prisma, agregaciones, filtros y paginacion del admin.
+- Las paginas admin no hacen queries directas a Prisma; solo llaman services.
+- `app/actions/admin.ts` contiene Server Actions del admin. Hoy maneja la actualizacion de comision y valida `adminPayments`.
+- Las metricas calculadas salen de agregaciones Prisma y deben mantener el comentario `// TODO: Dato calculado mediante agregacion`.
+
+### UI y navegacion
+- `components/layout/AppSidebar.tsx` es la sidebar base reutilizable.
+- `DriverSidebar` y `AdminSidebar` solo definen items y reutilizan `AppSidebar`.
+- Las secciones admin viven en sidebar, no en topbar.
+- `components/admin/AdminTableFilters.tsx` centraliza filtros por URL para reutilizarlos con `PaginationControls`.
+- Las tablas admin siguen el patron de Driver/Rider: tabla desktop + cards mobile + empty state.
+
+### Reglas de datos
+- No crear interfaces espejo de modelos Prisma.
+- Usar tipos generados desde Prisma Client.
+- No aplanar `Trabajador` y `Balance`; usar composicion.
+- No calcular dinero con `number`; mantener `Prisma.Decimal` y formatear al renderizar.
 
 ---
 

@@ -6,7 +6,7 @@ import { getAdminDashboardData } from "@/lib/services/admin";
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
-  const { settings, metrics } = await getAdminDashboardData();
+  const { settings, dailyMetrics, monthlyMetrics } = await getAdminDashboardData();
 
   return (
     <div className="max-w-6xl space-y-8 animate-fade-in">
@@ -27,7 +27,10 @@ export default async function AdminPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <AdminDashboardMetrics metrics={metrics} />
+        <AdminDashboardMetrics
+          dailyMetrics={dailyMetrics}
+          monthlyMetrics={monthlyMetrics}
+        />
         <AdminCommissionAction
           currentRate={settings.commissionRate.toFixed(2)}
         />

@@ -51,6 +51,19 @@ export function AdminRefreshButtonSkeleton() {
   return <SkeletonBlock className="h-10 w-full rounded-md sm:w-32" />;
 }
 
+function AdminMetricSectionSkeleton() {
+  return (
+    <div className="space-y-3">
+      <SkeletonBlock className="h-4 w-28" />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <AdminMetricCardSkeleton key={index} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function AdminDashboardSkeleton() {
   return (
     <div className="max-w-6xl space-y-8 animate-fade-in">
@@ -60,10 +73,9 @@ export function AdminDashboardSkeleton() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <AdminMetricCardSkeleton key={index} />
-          ))}
+        <div className="space-y-6">
+          <AdminMetricSectionSkeleton />
+          <AdminMetricSectionSkeleton />
         </div>
         <AdminCommissionCardSkeleton />
       </div>

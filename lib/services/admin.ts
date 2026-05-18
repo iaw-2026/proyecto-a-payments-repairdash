@@ -10,6 +10,7 @@ import {
 } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getCommissionSettings } from "@/lib/services/liquidations";
+import { unstable_cache } from "next/cache";
 
 const ADMIN_PAGE_SIZE_MAX = 50;
 
@@ -26,19 +27,19 @@ export type AdminPaginationOptions = {
 };
 
 export type AdminDashboardMetrics = {
-  monthStart: Date;
-  monthEnd: Date;
+  periodStart: Date;
+  periodEnd: Date;
   grossVolume: Prisma.Decimal;
   commissionCollected: Prisma.Decimal;
   netLiquidated: Prisma.Decimal;
-  requestedWithdrawalsAmount: Prisma.Decimal;
-  requestedWithdrawalsCount: number;
-  balanceAvailableTotal: Prisma.Decimal;
-  balanceLockedTotal: Prisma.Decimal;
-  transactionsByStatus: Array<{
-    status: TransactionStatus;
-    count: number;
-  }>;
+};
+
+type CachedAdminDashboardMetrics = {
+  periodStart: string;
+  periodEnd: string;
+  grossVolume: string;
+  commissionCollected: string;
+  netLiquidated: string;
 };
 
 export type AdminDriverItem = {
@@ -75,6 +76,28 @@ function monthBounds(now = new Date()) {
     start: new Date(now.getFullYear(), now.getMonth(), 1),
     end: new Date(now.getFullYear(), now.getMonth() + 1, 1),
   };
+}
+
+function dayBounds(now = new Date()) {
+  return {
+    start: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+    end: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1),
+  };
+}
+
+function dateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function monthKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+
+  return `${year}-${month}`;
 }
 
 function parseDateStart(value?: string) {
@@ -128,25 +151,46 @@ function isTransactionStatus(value?: string): value is TransactionStatus {
 }
 
 export async function getAdminDashboardData(now = new Date()) {
-  const { start, end } = monthBounds(now);
-  const monthlyCreatedAt = {
+  const dailyBounds = dayBounds(now);
+  const monthlyBounds = monthBounds(now);
+
+  const [settings, dailyMetrics, monthlyMetrics] = await Promise.all([
+    getCommissionSettings(),
+    getCachedAdminDashboardMetrics(
+      `admin-metrics-day-${dateKey(dailyBounds.start)}`,
+      dailyBounds.start,
+      dailyBounds.end,
+    ),
+    getCachedAdminDashboardMetrics(
+      `admin-metrics-month-${monthKey(monthlyBounds.start)}`,
+      monthlyBounds.start,
+      monthlyBounds.end,
+    ),
+  ]);
+
+  return {
+    settings,
+    dailyMetrics,
+    monthlyMetrics,
+  };
+}
+
+async function getAdminDashboardMetricsForRange(
+  start: Date,
+  end: Date,
+): Promise<CachedAdminDashboardMetrics> {
+  const periodCreatedAt = {
     gte: start,
     lt: end,
   };
 
   const [
-    settings,
     grossVolume,
     liquidatedTotals,
-    requestedWithdrawals,
-    requestedWithdrawalsCount,
-    balanceTotals,
-    transactionsByStatus,
   ] = await Promise.all([
-    getCommissionSettings(),
     prisma.transaction.aggregate({
       where: {
-        createdAt: monthlyCreatedAt,
+        createdAt: periodCreatedAt,
         status: {
           in: [TransactionStatus.RESERVED, TransactionStatus.LIQUIDATED],
         },
@@ -157,7 +201,7 @@ export async function getAdminDashboardData(now = new Date()) {
     }),
     prisma.transaction.aggregate({
       where: {
-        liquidatedAt: monthlyCreatedAt,
+        liquidatedAt: periodCreatedAt,
         status: TransactionStatus.LIQUIDATED,
       },
       _sum: {
@@ -165,58 +209,37 @@ export async function getAdminDashboardData(now = new Date()) {
         netAmount: true,
       },
     }),
-    prisma.withdrawal.aggregate({
-      where: {
-        createdAt: monthlyCreatedAt,
-        status: WithdrawalStatus.REQUESTED,
-      },
-      _sum: {
-        amount: true,
-      },
-    }),
-    prisma.withdrawal.count({
-      where: {
-        createdAt: monthlyCreatedAt,
-        status: WithdrawalStatus.REQUESTED,
-      },
-    }),
-    prisma.balance.aggregate({
-      _sum: {
-        balanceAvailable: true,
-        balanceLocked: true,
-      },
-    }),
-    prisma.transaction.groupBy({
-      by: ["status"],
-      where: {
-        createdAt: monthlyCreatedAt,
-      },
-      _count: {
-        status: true,
-      },
-      orderBy: {
-        status: "asc",
-      },
-    }),
   ]);
 
   return {
-    settings,
-    metrics: {
-      monthStart: start,
-      monthEnd: end,
-      grossVolume: grossVolume._sum.amount ?? zero(), // TODO: Dato calculado mediante agregacion
-      commissionCollected: liquidatedTotals._sum.commissionAmount ?? zero(), // TODO: Dato calculado mediante agregacion
-      netLiquidated: liquidatedTotals._sum.netAmount ?? zero(), // TODO: Dato calculado mediante agregacion
-      requestedWithdrawalsAmount: requestedWithdrawals._sum.amount ?? zero(), // TODO: Dato calculado mediante agregacion
-      requestedWithdrawalsCount,
-      balanceAvailableTotal: balanceTotals._sum.balanceAvailable ?? zero(), // TODO: Dato calculado mediante agregacion
-      balanceLockedTotal: balanceTotals._sum.balanceLocked ?? zero(), // TODO: Dato calculado mediante agregacion
-      transactionsByStatus: transactionsByStatus.map((item) => ({
-        status: item.status,
-        count: item._count.status,
-      })),
-    } satisfies AdminDashboardMetrics,
+    periodStart: start.toISOString(),
+    periodEnd: end.toISOString(),
+    grossVolume: (grossVolume._sum.amount ?? zero()).toString(), // TODO: Dato calculado mediante agregacion
+    commissionCollected: (liquidatedTotals._sum.commissionAmount ?? zero()).toString(), // TODO: Dato calculado mediante agregacion
+    netLiquidated: (liquidatedTotals._sum.netAmount ?? zero()).toString(), // TODO: Dato calculado mediante agregacion
+  };
+}
+
+async function getCachedAdminDashboardMetrics(
+  cacheKey: string,
+  start: Date,
+  end: Date,
+): Promise<AdminDashboardMetrics> {
+  const cachedMetrics = await unstable_cache(
+    () => getAdminDashboardMetricsForRange(start, end),
+    [cacheKey],
+    {
+      revalidate: 60,
+      tags: [cacheKey],
+    },
+  )();
+
+  return {
+    periodStart: new Date(cachedMetrics.periodStart),
+    periodEnd: new Date(cachedMetrics.periodEnd),
+    grossVolume: new Prisma.Decimal(cachedMetrics.grossVolume),
+    commissionCollected: new Prisma.Decimal(cachedMetrics.commissionCollected),
+    netLiquidated: new Prisma.Decimal(cachedMetrics.netLiquidated),
   };
 }
 
