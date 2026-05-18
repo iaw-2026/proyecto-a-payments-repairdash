@@ -1,16 +1,23 @@
 import { AdminSidebar } from "@/components/layout/AdminSidebar";
 import { getAuthUser } from "@/lib/auth";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 
 export default async function AdminLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  let hasAccess = false;
+
   try {
     await getAuthUser("adminPayments");
+    hasAccess = true;
   } catch {
-    notFound();
+    hasAccess = false;
+  }
+
+  if (!hasAccess) {
+    redirect("/dashboard");
   }
 
   return (

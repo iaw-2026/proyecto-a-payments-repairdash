@@ -6,9 +6,16 @@ export default async function RiderLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  let hasAccess = false;
+
   try {
     await getAuthUser("rider");
+    hasAccess = true;
   } catch {
+    hasAccess = false;
+  }
+
+  if (!hasAccess) {
     redirect("/dashboard");
   }
 
