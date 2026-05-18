@@ -1,6 +1,14 @@
 import { SignIn, SignOutButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
+import type { Metadata } from "next";
 import { headers } from "next/headers";
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 type SignInPageProps = {
   searchParams: Promise<{

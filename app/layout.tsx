@@ -6,6 +6,10 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Repairdash Payments",
   description: "Sistema de pagos para reparaciones - vista rider y driver",
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
