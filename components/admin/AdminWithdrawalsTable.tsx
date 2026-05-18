@@ -79,18 +79,23 @@ export function AdminWithdrawalsTable({
       <div className="divide-y divide-border/50 md:hidden">
         {items.map((withdrawal) => (
           <div key={withdrawal.id} className="space-y-3 px-5 py-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
+            <div className="flex flex-col gap-3 min-[380px]:flex-row min-[380px]:items-start min-[380px]:justify-between">
+              <div className="min-w-0">
                 <p className="font-mono text-lg font-semibold text-foreground">
                   {formatARS(withdrawal.amount)}
                 </p>
-                <p className="mt-1 text-sm text-secondary">
+                <p className="mt-1 truncate text-sm text-secondary">
                   {withdrawal.trabajador.user.fullName}
                 </p>
+                <p className="mt-1 truncate font-mono text-xs text-muted">
+                  {withdrawal.trabajador.user.email}
+                </p>
               </div>
-              <AdminStatusBadge status={withdrawal.status} />
+              <div className="shrink-0">
+                <AdminStatusBadge status={withdrawal.status} />
+              </div>
             </div>
-            <div className="flex items-center justify-between gap-4 text-xs text-muted">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
               <span>{formatDateTime(withdrawal.createdAt)}</span>
               <span className="font-mono">{shortId(withdrawal.id)}</span>
             </div>

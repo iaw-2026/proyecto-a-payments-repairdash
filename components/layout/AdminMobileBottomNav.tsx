@@ -1,6 +1,9 @@
-import { AppSidebar, type AppSidebarItem } from "@/components/layout/AppSidebar";
+"use client";
 
-const navItems: AppSidebarItem[] = [
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+const tabs = [
   {
     href: "/admin",
     label: "Dashboard",
@@ -41,7 +44,7 @@ const navItems: AppSidebarItem[] = [
   },
   {
     href: "/admin/transactions",
-    label: "Transacciones",
+    label: "Trans.",
     icon: (
       <svg
         viewBox="0 0 24 24"
@@ -98,13 +101,30 @@ const navItems: AppSidebarItem[] = [
   },
 ];
 
-export function AdminSidebar() {
+export function AdminMobileBottomNav() {
+  const pathname = usePathname();
+
   return (
-    <AppSidebar
-      homeHref="/admin"
-      title="Admin"
-      items={navItems}
-      mobile="hidden"
-    />
+    <nav className="fixed bottom-0 left-0 right-0 z-50 flex border-t border-border bg-surface/90 backdrop-blur-xl lg:hidden">
+      {tabs.map((tab) => {
+        const isActive =
+          tab.href === "/admin"
+            ? pathname === "/admin"
+            : pathname.startsWith(tab.href);
+
+        return (
+          <Link
+            key={tab.href}
+            href={tab.href}
+            className={`flex min-w-0 flex-1 flex-col items-center gap-1 px-1 py-3 text-[11px] font-medium leading-none transition-colors ${
+              isActive ? "text-accent" : "text-muted"
+            }`}
+          >
+            {tab.icon}
+            <span className="max-w-full truncate">{tab.label}</span>
+          </Link>
+        );
+      })}
+    </nav>
   );
 }

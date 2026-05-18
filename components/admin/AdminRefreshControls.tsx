@@ -32,7 +32,7 @@ export function AdminRefreshControls() {
       type="button"
       onClick={refresh}
       disabled={isPending}
-      className="inline-flex items-center justify-center gap-2 rounded-md border border-border bg-surface/60 px-4 py-2.5 text-sm font-semibold text-secondary transition-all hover:border-accent/40 hover:bg-surface-elevated/40 hover:text-foreground disabled:cursor-wait disabled:opacity-60"
+      className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border bg-surface/60 px-4 py-2.5 text-sm font-semibold text-secondary transition-all hover:border-accent/40 hover:bg-surface-elevated/40 hover:text-foreground disabled:cursor-wait disabled:opacity-60 sm:w-auto"
     >
       <svg
         viewBox="0 0 24 24"

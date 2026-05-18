@@ -35,7 +35,7 @@ export function AdminCommissionAction({
 
   return (
     <>
-      <div className="flex flex-col justify-between rounded-xl border border-border bg-surface/70 p-6 backdrop-blur transition-all hover:bg-surface-elevated">
+      <div className="flex flex-col justify-between rounded-xl border border-border bg-surface/70 p-5 backdrop-blur transition-all hover:bg-surface-elevated sm:p-6">
         <div>
           <p className="text-sm font-medium uppercase tracking-wider text-muted">
             Accion rapida
@@ -46,7 +46,7 @@ export function AdminCommissionAction({
           <p className="mt-3 text-sm leading-relaxed text-secondary">
             Ajusta el porcentaje que se aplicara a las proximas liquidaciones.
           </p>
-          <p className="mt-5 font-mono text-3xl font-bold text-accent">
+          <p className="mt-4 font-mono text-2xl font-bold text-accent sm:mt-5 sm:text-3xl">
             {currentRate}%
           </p>
         </div>

@@ -11,14 +11,18 @@ function UserCell({
   fallback: string | null;
 }) {
   if (!user) {
-    return <span className="font-mono text-xs text-muted">{fallback ?? "-"}</span>;
+    return (
+      <span className="block break-all font-mono text-xs text-muted">
+        {fallback ?? "-"}
+      </span>
+    );
   }
 
   return (
-    <>
-      <p className="font-medium text-foreground">{user.fullName}</p>
-      <p className="mt-1 font-mono text-xs text-muted">{user.email}</p>
-    </>
+    <div className="min-w-0">
+      <p className="truncate font-medium text-foreground">{user.fullName}</p>
+      <p className="mt-1 truncate font-mono text-xs text-muted">{user.email}</p>
+    </div>
   );
 }
 
@@ -105,8 +109,8 @@ export function AdminTransactionsTable({
       <div className="divide-y divide-border/50 md:hidden">
         {items.map(({ transaction, cliente, trabajador }) => (
           <div key={transaction.id} className="space-y-3 px-5 py-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
+            <div className="flex flex-col gap-3 min-[380px]:flex-row min-[380px]:items-start min-[380px]:justify-between">
+              <div className="min-w-0">
                 <p className="font-mono text-lg font-semibold text-foreground">
                   {formatARS(transaction.amount)}
                 </p>
@@ -114,19 +118,21 @@ export function AdminTransactionsTable({
                   Trabajo {shortId(transaction.trabajoId)}
                 </p>
               </div>
-              <AdminStatusBadge status={transaction.status} />
+              <div className="shrink-0">
+                <AdminStatusBadge status={transaction.status} />
+              </div>
             </div>
             <div className="grid gap-3 text-sm">
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs uppercase tracking-wider text-muted">Cliente</p>
                 <UserCell user={cliente} fallback={transaction.clientId} />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs uppercase tracking-wider text-muted">Driver</p>
                 <UserCell user={trabajador} fallback={transaction.trabajadorId} />
               </div>
             </div>
-            <div className="flex items-center justify-between gap-4 text-xs text-muted">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
               <span>{formatDateTime(transaction.createdAt)}</span>
               <span className="font-mono">{shortId(transaction.id)}</span>
             </div>

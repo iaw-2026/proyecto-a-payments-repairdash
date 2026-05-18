@@ -64,9 +64,11 @@ export function AdminTableFilters({
         )}
 
         {showDateRange ? (
-          <>
+          <div className="grid grid-cols-2 gap-3 lg:contents">
             <label className="block">
-              <span className="sr-only">Desde</span>
+              <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted lg:sr-only">
+                Desde
+              </span>
               <input
                 type="date"
                 name="from"
@@ -75,7 +77,9 @@ export function AdminTableFilters({
               />
             </label>
             <label className="block">
-              <span className="sr-only">Hasta</span>
+              <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted lg:sr-only">
+                Hasta
+              </span>
               <input
                 type="date"
                 name="to"
@@ -83,7 +87,7 @@ export function AdminTableFilters({
                 className="h-11 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-accent focus:ring-1 focus:ring-accent"
               />
             </label>
-          </>
+          </div>
         ) : (
           <>
             <div className="hidden lg:block" />
@@ -91,18 +95,20 @@ export function AdminTableFilters({
           </>
         )}
 
-        <button
-          type="submit"
-          className="inline-flex h-11 items-center justify-center rounded-lg bg-accent px-5 text-sm font-semibold text-white transition-all hover:bg-accent-hover"
-        >
-          Filtrar
-        </button>
-        <Link
-          href={pathname}
-          className="inline-flex h-11 items-center justify-center rounded-lg border border-border bg-surface/60 px-5 text-sm font-semibold text-secondary transition-all hover:border-accent/40 hover:bg-surface-elevated/40 hover:text-foreground"
-        >
-          Limpiar
-        </Link>
+        <div className="grid grid-cols-2 gap-3 lg:contents">
+          <button
+            type="submit"
+            className="inline-flex h-11 items-center justify-center rounded-lg bg-accent px-5 text-sm font-semibold text-white transition-all hover:bg-accent-hover"
+          >
+            Filtrar
+          </button>
+          <Link
+            href={pathname}
+            className="inline-flex h-11 items-center justify-center rounded-lg border border-border bg-surface/60 px-5 text-sm font-semibold text-secondary transition-all hover:border-accent/40 hover:bg-surface-elevated/40 hover:text-foreground"
+          >
+            Limpiar
+          </Link>
+        </div>
       </div>
     </form>
   );
