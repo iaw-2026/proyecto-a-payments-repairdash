@@ -4,6 +4,7 @@ import {
   WithdrawalStatus,
   type Balance,
   type Cliente,
+  type Transaction,
   type Trabajador,
   type User,
 } from "@/generated/prisma/client";
@@ -120,6 +121,10 @@ function normalizeQuery(value?: string) {
 
 function isWithdrawalStatus(value?: string): value is WithdrawalStatus {
   return !!value && Object.values(WithdrawalStatus).includes(value as WithdrawalStatus);
+}
+
+function isTransactionStatus(value?: string): value is TransactionStatus {
+  return !!value && Object.values(TransactionStatus).includes(value as TransactionStatus);
 }
 
 export async function getAdminDashboardData(now = new Date()) {
@@ -267,6 +272,95 @@ export async function getAdminWithdrawals(
     skip: (currentPage - 1) * pageSize,
     take: pageSize,
   });
+
+  return {
+    items,
+    totalCount,
+    totalPages,
+    currentPage,
+  };
+}
+
+export type AdminTransactionItem = {
+  transaction: Transaction;
+  cliente: User | null;
+  trabajador: User | null;
+};
+
+export async function getAdminTransactions(
+  filters: AdminDateFilters = {},
+  options: AdminPaginationOptions = {},
+) {
+  const pageSize = safePageSize(options.pageSize);
+  const requestedPage = safePage(options.page);
+  const query = normalizeQuery(filters.q);
+  const createdAt = createdAtRange(filters);
+
+  const where: Prisma.TransactionWhereInput = {
+    ...(isTransactionStatus(filters.status) ? { status: filters.status } : {}),
+    ...(createdAt ? { createdAt } : {}),
+  };
+
+  if (query) {
+    const matchingUsers = await prisma.user.findMany({
+      where: {
+        OR: [
+          { clerkId: { contains: query } },
+          { email: { contains: query } },
+          { fullName: { contains: query } },
+        ],
+      },
+      select: { clerkId: true },
+      take: 100,
+    });
+    const matchingUserIds = matchingUsers.map((user) => user.clerkId);
+
+    where.OR = [
+      { id: { contains: query } },
+      { trabajoId: { contains: query } },
+      { clientId: { contains: query } },
+      { trabajadorId: { contains: query } },
+      { gatewayPreferenceId: { contains: query } },
+      { gatewayPaymentId: { contains: query } },
+      { clientId: { in: matchingUserIds } },
+      { trabajadorId: { in: matchingUserIds } },
+    ];
+  }
+
+  const totalCount = await prisma.transaction.count({ where });
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const currentPage = Math.min(requestedPage, totalPages);
+
+  const transactions = await prisma.transaction.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+    skip: (currentPage - 1) * pageSize,
+    take: pageSize,
+  });
+
+  const userIds = Array.from(
+    new Set(
+      transactions.flatMap((transaction) => [
+        transaction.clientId,
+        transaction.trabajadorId,
+      ]).filter((value): value is string => !!value),
+    ),
+  );
+
+  const users = await prisma.user.findMany({
+    where: {
+      clerkId: {
+        in: userIds,
+      },
+    },
+  });
+  const usersById = new Map(users.map((user) => [user.clerkId, user]));
+
+  const items: AdminTransactionItem[] = transactions.map((transaction) => ({
+    transaction,
+    cliente: transaction.clientId ? usersById.get(transaction.clientId) ?? null : null,
+    trabajador: usersById.get(transaction.trabajadorId) ?? null,
+  }));
 
   return {
     items,

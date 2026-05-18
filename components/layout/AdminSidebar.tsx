@@ -40,6 +40,25 @@ const navItems: AppSidebarItem[] = [
     ),
   },
   {
+    href: "/admin/transactions",
+    label: "Transacciones",
+    icon: (
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="h-5 w-5"
+      >
+        <path d="M4 7h16" />
+        <path d="M4 12h16" />
+        <path d="M4 17h10" />
+      </svg>
+    ),
+  },
+  {
     href: "/admin/drivers",
     label: "Drivers",
     icon: (
