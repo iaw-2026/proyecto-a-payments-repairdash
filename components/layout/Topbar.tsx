@@ -8,12 +8,13 @@ export async function Topbar() {
     role === "driver" ? "/driver" : role === "rider" ? "/rider" : role === "adminPayments" ? "/admin" : null;
   const roleLabel =
     role === "driver" ? "Driver" : role === "rider" ? "Rider" : role === "adminPayments" ? "Admin pagos" : null;
+  const homeHref = role ? "/dashboard" : "/";
 
   return (
     <header className="sticky top-0 z-40 h-topbar border-b border-border bg-background/85 backdrop-blur-xl flex items-center px-6">
       <div className="flex w-full items-center justify-between">
         <Link
-          href="/"
+          href={homeHref}
           className="text-sm font-semibold tracking-[0.2em] uppercase text-foreground transition-colors hover:text-accent"
         >
           Repairdash

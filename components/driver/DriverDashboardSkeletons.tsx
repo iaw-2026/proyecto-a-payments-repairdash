@@ -1,19 +1,4 @@
-import type { CSSProperties } from "react";
-
-function SkeletonBlock({
-  className,
-  style,
-}: {
-  className: string;
-  style?: CSSProperties;
-}) {
-  return (
-    <div
-      className={`rounded bg-surface-elevated/50 animate-pulse ${className}`}
-      style={style}
-    />
-  );
-}
+import { SkeletonBlock } from "@/components/ui/Skeleton";
 
 export function DriverHeaderSkeleton() {
   return (
