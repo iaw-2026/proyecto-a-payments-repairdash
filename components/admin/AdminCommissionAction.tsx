@@ -17,7 +17,7 @@ function SubmitButton() {
   return (
     <button
       type="submit"
-      className="w-full rounded-xl bg-accent py-4 text-sm font-bold uppercase tracking-widest text-white shadow-lg transition-all duration-300 hover:bg-accent-hover hover:shadow-[0_0_25px_rgba(245,0,241,0.4)]"
+      className="w-full rounded-xl bg-accent py-4 text-sm font-bold uppercase tracking-widest text-accent-foreground shadow-lg transition-all duration-300 hover:bg-accent-hover hover:shadow-[0_0_25px_rgba(245,0,241,0.4)]"
     >
       Guardar comision
     </button>
@@ -40,9 +40,9 @@ export function AdminCommissionAction({
           <p className="text-sm font-medium uppercase tracking-wider text-muted">
             Accion rapida
           </p>
-          <h3 className="mt-2 text-xl font-bold text-foreground">
+          <h2 className="mt-2 text-xl font-bold text-foreground">
             Modificar comision
-          </h3>
+          </h2>
           <p className="mt-3 text-sm leading-relaxed text-secondary">
             Ajusta el porcentaje que se aplicara a las proximas liquidaciones.
           </p>
@@ -54,7 +54,7 @@ export function AdminCommissionAction({
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="mt-6 inline-flex items-center justify-center rounded-md bg-accent px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-accent-hover hover:shadow-[0_0_20px_rgba(245,0,241,0.25)]"
+          className="mt-6 inline-flex items-center justify-center rounded-md bg-accent px-6 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover hover:shadow-[0_0_20px_rgba(245,0,241,0.25)]"
         >
           Modificar
           <svg

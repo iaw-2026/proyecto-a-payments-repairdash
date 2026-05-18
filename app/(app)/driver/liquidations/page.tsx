@@ -177,7 +177,7 @@ export default async function DriverLiquidationsPage({
           </p>
           <Link
             href="/driver"
-            className="mt-6 inline-flex rounded-md bg-accent px-5 py-3 text-sm font-semibold text-white transition-all hover:bg-accent-hover"
+            className="mt-6 inline-flex rounded-md bg-accent px-5 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover"
           >
             Volver al dashboard
           </Link>

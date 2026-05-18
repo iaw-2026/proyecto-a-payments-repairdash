@@ -12,7 +12,7 @@
 
   /* Text */
   --color-secondary: #C392DD;
-  --color-muted: #8D62A5;
+  --color-muted: #BE97D5;
 
   /* Borders */
   --color-border: rgba(141, 98, 165, 0.25);
@@ -20,6 +20,7 @@
   /* Accent */
   --color-accent: #F500F1;
   --color-accent-hover: #FF33F3;
+  --color-accent-foreground: #271033;
   --color-accent-glow: rgba(245, 0, 241, 0.2);
   --color-accent-subtle: rgba(245, 0, 241, 0.08);
 

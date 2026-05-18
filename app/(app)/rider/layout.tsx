@@ -19,5 +19,5 @@ export default async function RiderLayout({
     redirect("/dashboard");
   }
 
-  return children;
+  return <main className="flex-1">{children}</main>;
 }

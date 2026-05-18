@@ -34,9 +34,9 @@ export function IncomeChart({ data }: IncomeChartProps) {
         <p className="text-sm font-medium text-muted uppercase tracking-wider">
           Ingresos
         </p>
-        <h3 className="mt-1 text-xl font-bold text-foreground">
+        <h2 className="mt-1 text-xl font-bold text-foreground">
           Últimos 7 días
-        </h3>
+        </h2>
       </div>
 
       <div className="h-64 w-full">
@@ -59,7 +59,7 @@ export function IncomeChart({ data }: IncomeChartProps) {
               dataKey="day"
               axisLine={false}
               tickLine={false}
-              tick={{ fill: "#8D62A5", fontSize: 12, fontWeight: 500 }}
+              tick={{ fill: "#BE97D5", fontSize: 12, fontWeight: 500 }}
               dy={8}
             />
 
@@ -67,7 +67,7 @@ export function IncomeChart({ data }: IncomeChartProps) {
               axisLine={false}
               tickLine={false}
               tickFormatter={formatCompact}
-              tick={{ fill: "#8D62A5", fontSize: 12 }}
+              tick={{ fill: "#BE97D5", fontSize: 12 }}
               width={45}
             />
 

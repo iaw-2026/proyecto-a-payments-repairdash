@@ -98,7 +98,7 @@ export function AdminTableFilters({
         <div className="grid grid-cols-2 gap-3 lg:contents">
           <button
             type="submit"
-            className="inline-flex h-11 items-center justify-center rounded-lg bg-accent px-5 text-sm font-semibold text-white transition-all hover:bg-accent-hover"
+            className="inline-flex h-11 items-center justify-center rounded-lg bg-accent px-5 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover"
           >
             Filtrar
           </button>
