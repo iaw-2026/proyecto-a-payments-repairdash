@@ -169,6 +169,16 @@ No hay pantalla admin de transacciones ni disputas en el MVP.
 - `app/actions/admin.ts` contiene Server Actions del admin. Hoy maneja la actualizacion de comision y valida `adminPayments`.
 - Las metricas calculadas salen de agregaciones Prisma y deben mantener el comentario `// TODO: Dato calculado mediante agregacion`.
 
+### Cache de metricas admin
+- `/admin` usa cache server-side de 60 segundos solo para las metricas visibles del dashboard: volumen bruto, comisiones y neto liquidado.
+- Hay dos entradas cacheadas independientes:
+  - `admin-metrics-day-YYYY-MM-DD`: rango desde el inicio del dia local hasta el inicio del dia siguiente.
+  - `admin-metrics-month-YYYY-MM`: rango desde el inicio del mes local hasta el inicio del mes siguiente.
+- La clave se construye con el inicio estable del periodo, nunca con la hora exacta del request. Next.js maneja el vencimiento con el TTL de 60 segundos.
+- Los montos se serializan como string dentro del cache y se rehidratan a `Prisma.Decimal` antes de llegar a la UI.
+- `CommissionSettings` no se cachea en este flujo; la card de modificar comision lee el valor fresco.
+- No cachear tablas admin (`transactions`, `drivers`, `riders`, `withdrawals`), busquedas, filtros ni paginacion. Para esos casos priorizar frescura y optimizacion de queries.
+
 ### UI y navegacion
 - `components/layout/AppSidebar.tsx` es la sidebar base reutilizable.
 - `DriverSidebar` y `AdminSidebar` solo definen items y reutilizan `AppSidebar`.

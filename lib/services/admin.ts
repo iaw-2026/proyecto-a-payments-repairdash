@@ -63,6 +63,16 @@ function zero() {
   return new Prisma.Decimal("0.00");
 }
 
+function latestDate(...dates: Array<Date | null | undefined>) {
+  return dates.reduce<Date | null>((latest, date) => {
+    if (!date) {
+      return latest;
+    }
+
+    return !latest || date > latest ? date : latest;
+  }, null);
+}
+
 function safePageSize(pageSize: number | undefined) {
   return Math.max(1, Math.min(ADMIN_PAGE_SIZE_MAX, Math.floor(pageSize ?? 10)));
 }
@@ -441,48 +451,77 @@ export async function getAdminDrivers(
     take: pageSize,
   });
 
-  const items = await Promise.all(
-    trabajadores.map(async (trabajador): Promise<AdminDriverItem> => {
-      const [withdrawalCount, transactionCount, latestTransaction, latestWithdrawal] =
-        await Promise.all([
-          prisma.withdrawal.count({
-            where: { trabajadorId: trabajador.clerkId },
-          }),
-          prisma.transaction.count({
-            where: { trabajadorId: trabajador.clerkId },
-          }),
-          prisma.transaction.findFirst({
-            where: { trabajadorId: trabajador.clerkId },
-            orderBy: { createdAt: "desc" },
-            select: { createdAt: true },
-          }),
-          prisma.withdrawal.findFirst({
-            where: { trabajadorId: trabajador.clerkId },
-            orderBy: { createdAt: "desc" },
-            select: { createdAt: true },
-          }),
-        ]);
+  const trabajadorIds = trabajadores.map((trabajador) => trabajador.clerkId);
+  const [transactionStats, withdrawalStats] = await Promise.all([
+    trabajadorIds.length > 0
+      ? prisma.transaction.groupBy({
+          by: ["trabajadorId"],
+          where: {
+            trabajadorId: {
+              in: trabajadorIds,
+            },
+          },
+          _count: {
+            id: true,
+          },
+          _max: {
+            createdAt: true,
+          },
+        })
+      : Promise.resolve([]),
+    trabajadorIds.length > 0
+      ? prisma.withdrawal.groupBy({
+          by: ["trabajadorId"],
+          where: {
+            trabajadorId: {
+              in: trabajadorIds,
+            },
+          },
+          _count: {
+            id: true,
+          },
+          _max: {
+            createdAt: true,
+          },
+        })
+      : Promise.resolve([]),
+  ]);
 
-      const latestDates = [latestTransaction?.createdAt, latestWithdrawal?.createdAt].filter(
-        (value): value is Date => !!value,
-      );
-
-      return {
-        trabajador: {
-          clerkId: trabajador.clerkId,
-          cbuCvu: trabajador.cbuCvu,
-        },
-        user: trabajador.user,
-        balance: trabajador.balance,
-        withdrawalCount,
-        transactionCount,
-        latestActivityAt:
-          latestDates.length > 0
-            ? new Date(Math.max(...latestDates.map((date) => date.getTime())))
-            : null,
-      };
-    }),
+  const transactionStatsByTrabajadorId = new Map(
+    transactionStats.map((item) => [
+      item.trabajadorId,
+      {
+        count: item._count.id,
+        latestAt: item._max.createdAt,
+      },
+    ]),
   );
+  const withdrawalStatsByTrabajadorId = new Map(
+    withdrawalStats.map((item) => [
+      item.trabajadorId,
+      {
+        count: item._count.id,
+        latestAt: item._max.createdAt,
+      },
+    ]),
+  );
+
+  const items = trabajadores.map((trabajador): AdminDriverItem => {
+    const transactionStat = transactionStatsByTrabajadorId.get(trabajador.clerkId);
+    const withdrawalStat = withdrawalStatsByTrabajadorId.get(trabajador.clerkId);
+
+    return {
+      trabajador: {
+        clerkId: trabajador.clerkId,
+        cbuCvu: trabajador.cbuCvu,
+      },
+      user: trabajador.user,
+      balance: trabajador.balance,
+      withdrawalCount: withdrawalStat?.count ?? 0,
+      transactionCount: transactionStat?.count ?? 0,
+      latestActivityAt: latestDate(transactionStat?.latestAt, withdrawalStat?.latestAt),
+    };
+  });
 
   return {
     items,
@@ -538,41 +577,78 @@ export async function getAdminRiders(
     take: pageSize,
   });
 
-  const items = await Promise.all(
-    clientes.map(async (cliente): Promise<AdminRiderItem> => {
-      const paidWhere: Prisma.TransactionWhereInput = {
-        clientId: cliente.clerkId,
-        status: {
-          in: [TransactionStatus.RESERVED, TransactionStatus.LIQUIDATED],
-        },
-      };
+  const clienteIds = clientes.map((cliente) => cliente.clerkId);
+  const [transactionStats, paidVolumeStats] = await Promise.all([
+    clienteIds.length > 0
+      ? prisma.transaction.groupBy({
+          by: ["clientId"],
+          where: {
+            clientId: {
+              in: clienteIds,
+            },
+          },
+          _count: {
+            id: true,
+          },
+          _max: {
+            createdAt: true,
+          },
+        })
+      : Promise.resolve([]),
+    clienteIds.length > 0
+      ? prisma.transaction.groupBy({
+          by: ["clientId"],
+          where: {
+            clientId: {
+              in: clienteIds,
+            },
+            status: {
+              in: [TransactionStatus.RESERVED, TransactionStatus.LIQUIDATED],
+            },
+          },
+          _sum: {
+            amount: true,
+          },
+        })
+      : Promise.resolve([]),
+  ]);
 
-      const [transactionCount, volume, latestTransaction] = await Promise.all([
-        prisma.transaction.count({
-          where: { clientId: cliente.clerkId },
-        }),
-        prisma.transaction.aggregate({
-          where: paidWhere,
-          _sum: { amount: true },
-        }),
-        prisma.transaction.findFirst({
-          where: { clientId: cliente.clerkId },
-          orderBy: { createdAt: "desc" },
-          select: { createdAt: true },
-        }),
-      ]);
-
-      return {
-        cliente: {
-          clerkId: cliente.clerkId,
-        },
-        user: cliente.user,
-        transactionCount,
-        volumePaid: volume._sum.amount ?? zero(),
-        latestTransactionAt: latestTransaction?.createdAt ?? null,
-      };
-    }),
+  const transactionStatsByClientId = new Map(
+    transactionStats.flatMap((item) =>
+      item.clientId
+        ? [
+            [
+              item.clientId,
+              {
+                count: item._count.id,
+                latestAt: item._max.createdAt,
+              },
+            ] as const,
+          ]
+        : [],
+    ),
   );
+  const paidVolumeByClientId = new Map(
+    paidVolumeStats.flatMap((item) =>
+      item.clientId
+        ? [[item.clientId, item._sum.amount ?? zero()] as const]
+        : [],
+    ),
+  );
+
+  const items = clientes.map((cliente): AdminRiderItem => {
+    const transactionStat = transactionStatsByClientId.get(cliente.clerkId);
+
+    return {
+      cliente: {
+        clerkId: cliente.clerkId,
+      },
+      user: cliente.user,
+      transactionCount: transactionStat?.count ?? 0,
+      volumePaid: paidVolumeByClientId.get(cliente.clerkId) ?? zero(),
+      latestTransactionAt: transactionStat?.latestAt ?? null,
+    };
+  });
 
   return {
     items,
