@@ -250,15 +250,20 @@ export async function getDriverIncomeChart(
 
   const rows = await prisma.$queryRaw<DriverIncomeAggregateRow[]>(Prisma.sql`
     SELECT
-      ((COALESCE("reservedAt", "createdAt") AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE})::date)::text AS "day",
+      "day",
       COALESCE(SUM("amount"), 0)::text AS "amount"
-    FROM "Transaction"
-    WHERE "trabajadorId" = ${clerkId}
-      AND "status" IN (${reservedStatus}::"TransactionStatus", ${liquidatedStatus}::"TransactionStatus")
-      AND COALESCE("reservedAt", "createdAt") >= (${startKey}::date::timestamp AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE})
-      AND COALESCE("reservedAt", "createdAt") < (${endExclusiveKey}::date::timestamp AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE})
-    GROUP BY ((COALESCE("reservedAt", "createdAt") AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE})::date)
-    ORDER BY ((COALESCE("reservedAt", "createdAt") AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE})::date) ASC
+    FROM (
+      SELECT
+        ((COALESCE("reservedAt", "createdAt") AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE})::date)::text AS "day",
+        "amount"
+      FROM "Transaction"
+      WHERE "trabajadorId" = ${clerkId}
+        AND "status" IN (${reservedStatus}::"TransactionStatus", ${liquidatedStatus}::"TransactionStatus")
+        AND COALESCE("reservedAt", "createdAt") >= (${startKey}::date::timestamp AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE})
+        AND COALESCE("reservedAt", "createdAt") < (${endExclusiveKey}::date::timestamp AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE})
+    ) AS "dailyIncome"
+    GROUP BY "day"
+    ORDER BY "day" ASC
   `);
 
   return buildDriverIncomeChartData(rows, { now });
