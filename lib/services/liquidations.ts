@@ -1,6 +1,17 @@
 import { Prisma, Transaction, TransactionStatus } from "@/generated/prisma/client";
 import { getAuthUser } from "@/lib/auth";
+import {
+  buildDriverIncomeChartData,
+  DRIVER_INCOME_STATUSES,
+  DRIVER_INCOME_TIME_ZONE,
+  getIncomeChartDateWindow,
+  getIncomeMonthDateWindow,
+  normalizeDriverIncomeTotal,
+  type DriverIncomeAggregateRow,
+  type DriverIncomeTotalRow,
+} from "@/lib/income-chart";
 import { prisma } from "@/lib/prisma";
+import type { IncomeDataPoint } from "@/lib/types/income";
 
 const COMMISSION_SETTINGS_ID = "platform";
 const DEFAULT_COMMISSION_RATE = new Prisma.Decimal("10.00");
@@ -228,4 +239,46 @@ export async function getDriverLiquidations(
     totalPages,
     currentPage,
   };
+}
+
+export async function getDriverIncomeChart(
+  now: Date = new Date(),
+): Promise<IncomeDataPoint[]> {
+  const { clerkId } = await getAuthUser("driver");
+  const { startKey, endExclusiveKey } = getIncomeChartDateWindow({ now });
+  const [reservedStatus, liquidatedStatus] = DRIVER_INCOME_STATUSES;
+
+  const rows = await prisma.$queryRaw<DriverIncomeAggregateRow[]>(Prisma.sql`
+    SELECT
+      ((COALESCE("reservedAt", "createdAt") AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE})::date)::text AS "day",
+      COALESCE(SUM("amount"), 0)::text AS "amount"
+    FROM "Transaction"
+    WHERE "trabajadorId" = ${clerkId}
+      AND "status" IN (${reservedStatus}::"TransactionStatus", ${liquidatedStatus}::"TransactionStatus")
+      AND COALESCE("reservedAt", "createdAt") >= (${startKey}::date::timestamp AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE})
+      AND COALESCE("reservedAt", "createdAt") < (${endExclusiveKey}::date::timestamp AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE})
+    GROUP BY ((COALESCE("reservedAt", "createdAt") AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE})::date)
+    ORDER BY ((COALESCE("reservedAt", "createdAt") AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE})::date) ASC
+  `);
+
+  return buildDriverIncomeChartData(rows, { now });
+}
+
+export async function getDriverEarnedThisMonth(
+  now: Date = new Date(),
+): Promise<string> {
+  const { clerkId } = await getAuthUser("driver");
+  const { startKey, endExclusiveKey } = getIncomeMonthDateWindow({ now });
+  const [reservedStatus, liquidatedStatus] = DRIVER_INCOME_STATUSES;
+
+  const rows = await prisma.$queryRaw<DriverIncomeTotalRow[]>(Prisma.sql`
+    SELECT COALESCE(SUM("amount"), 0)::text AS "amount"
+    FROM "Transaction"
+    WHERE "trabajadorId" = ${clerkId}
+      AND "status" IN (${reservedStatus}::"TransactionStatus", ${liquidatedStatus}::"TransactionStatus")
+      AND COALESCE("reservedAt", "createdAt") >= (${startKey}::date::timestamp AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE})
+      AND COALESCE("reservedAt", "createdAt") < (${endExclusiveKey}::date::timestamp AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE})
+  `);
+
+  return normalizeDriverIncomeTotal(rows[0]?.amount);
 }

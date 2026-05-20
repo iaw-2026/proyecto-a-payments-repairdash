@@ -9,6 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { formatARS } from "@/lib/money";
 import type { IncomeDataPoint } from "@/lib/types/income";
 
 interface IncomeChartProps {
@@ -19,6 +20,14 @@ interface IncomeChartProps {
 function formatCompact(value: number): string {
   if (value >= 1000) return `${(value / 1000).toFixed(0)}K`;
   return value.toString();
+}
+
+function getTooltipAmount(item: unknown) {
+  if (!item || typeof item !== "object" || !("payload" in item)) {
+    return "0.00";
+  }
+
+  return (item as { payload?: IncomeDataPoint }).payload?.amount ?? "0.00";
 }
 
 /**
@@ -80,19 +89,15 @@ export function IncomeChart({ data }: IncomeChartProps) {
                 fontSize: "0.875rem",
               }}
               labelStyle={{ color: "#C392DD", fontWeight: 500 }}
-              formatter={(value) => [
-                new Intl.NumberFormat("es-AR", {
-                  style: "currency",
-                  currency: "ARS",
-                  maximumFractionDigits: 0,
-                }).format(Number(value)),
+              formatter={(_, __, item) => [
+                formatARS(getTooltipAmount(item)),
                 "Ingreso",
               ]}
             />
 
             <Area
               type="monotone"
-              dataKey="amount"
+              dataKey="chartAmount"
               stroke="#F500F1"
               strokeWidth={2}
               fill="url(#incomeGradient)"

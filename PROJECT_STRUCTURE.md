@@ -39,7 +39,7 @@ components/
 │   └── AdminRidersTable.tsx          # Tabla responsive de riders
 ├── driver/                          # Componentes del dominio Driver
 │   ├── BalanceCards.tsx              # Tarjetas de saldo (available, locked, earned)
-│   ├── IncomeChart.tsx              # Gráfico de ingresos (Recharts)
+│   ├── IncomeChart.tsx              # Gráfico real de ingresos 7 días (Recharts)
 │   ├── QuickWithdrawalAction.tsx    # Card con botón de retiro rápido
 │   ├── WithdrawalModal.tsx          # Modal para confirmar retiro
 │   └── WithdrawalTable.tsx          # Tabla de historial de retiros
@@ -65,15 +65,15 @@ lib/
 ├── mock-auth.ts                     # Mock de Clerk (devuelve user_driver_1)
 ├── auth.ts                          # Placeholder Clerk
 ├── money.ts                         # Utilidades de formato monetario
+├── income-chart.ts                  # Normalización de ingresos diarios/mensuales del driver
 ├── errors.ts                        # Helpers de error
 ├── services/                        # Lógica de negocio (ver abajo)
 │   ├── withdrawals.ts
 │   ├── admin.ts                     # Queries/agregaciones admin
 │   ├── balances.ts
 │   ├── transactions.ts
-│   ├── liquidations.ts              # Liquidar RESERVED -> LIQUIDATED
+│   ├── liquidations.ts              # Liquidar RESERVED -> LIQUIDATED e ingresos driver
 │   └── users.ts
-├── mocks/                           # Datos mock para desarrollo
 ├── validations/                     # Esquemas de validación
 ├── integrations/                    # Mercado Pago (placeholder)
 └── types/                           # Tipos auxiliares
@@ -134,7 +134,9 @@ No se crean interfaces manuales que dupliquen modelos de la DB (`AGENTS.md` Rule
 
 ### Dashboard (`/driver`)
 - Tarjetas de balance (disponible, reservado, ganado este mes).
-- Gráfico de ingresos mensuales con Recharts.
+- Gráfico de ingresos reales de los últimos 7 días con Recharts.
+- `lib/services/liquidations.ts` obtiene el chart y el total mensual con agregaciones SQL por driver, estado y ventana de fechas.
+- `lib/income-chart.ts` normaliza los 7 días, calcula la ventana mensual, rellena días sin ingresos con `0.00` y mantiene `Prisma.Decimal` hasta derivar el valor visual para Recharts.
 - Botón de retiro rápido → abre `WithdrawalModal` → ejecuta Server Action.
 
 ### Historial de Retiros (`/driver/withdrawals`)
@@ -229,7 +231,8 @@ No hay pantalla admin de transacciones ni disputas en el MVP.
 | Archivo | Responsabilidad |
 |---|---|
 | `lib/services/checkout.ts` | Reglas de negocio del checkout, idempotencia por `trabajoId`, procesamiento de webhook y actualizacion de balances. |
-| `lib/services/liquidations.ts` | Reglas de liquidacion, calculo de comision y movimiento de `balanceLocked` a `balanceAvailable`. |
+| `lib/services/liquidations.ts` | Reglas de liquidacion, calculo de comision, movimiento de `balanceLocked` a `balanceAvailable`, chart real y total mensual del driver. |
+| `lib/income-chart.ts` | Helpers puros para ventanas diaria/mensual, labels diarios y normalizacion Decimal de ingresos del driver. |
 | `lib/integrations/mercadopago.ts` | Conexion con SDK de Mercado Pago para crear preferences y consultar pagos. |
 | `lib/integrations/rider-callback.ts` | POST server-to-server hacia Rider App con el resultado del pago. |
 | `lib/validations/checkout.ts` | Validacion Zod del contrato de checkout. |
