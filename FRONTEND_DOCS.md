@@ -187,6 +187,7 @@ Prisma DB
 - `getDriverIncomeChart()` calcula el chart de los últimos 7 días con una agregación SQL por día.
 - Ambos flujos filtran por `trabajadorId`, estados `RESERVED` + `LIQUIDATED`, y usan `COALESCE(reservedAt, createdAt)` en zona horaria `America/Argentina/Buenos_Aires`.
 - `lib/income-chart.ts` normaliza ventanas de fecha y mantiene los montos como strings decimales; solo `chartAmount` usa `number` para dibujar en Recharts.
+- Las métricas de ingresos del driver usan cache server-side de 60 segundos y tag por trabajador; el checkout invalida esa cache cuando una transacción empieza o deja de contar como ingreso.
 
 ---
 

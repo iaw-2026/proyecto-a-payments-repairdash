@@ -2,7 +2,10 @@ import { Prisma, TransactionStatus } from "@/generated/prisma/client";
 import { getMercadoPagoPayment, createMercadoPagoPreference } from "@/lib/integrations/mercadopago";
 import { sendRiderPaymentCallback } from "@/lib/integrations/rider-callback";
 import { prisma } from "@/lib/prisma";
-import { waitAndRunPendingLiquidations } from "@/lib/services/liquidations";
+import {
+  invalidateDriverIncomeCache,
+  waitAndRunPendingLiquidations,
+} from "@/lib/services/liquidations";
 import type { RiderPaymentCallbackPayload, RiderPaymentEstado } from "@/lib/types/payment-callback";
 import type { CheckoutInput } from "@/lib/validations/checkout";
 import { validateCheckout } from "@/lib/validations/checkout";
@@ -169,6 +172,10 @@ export function mapTransactionStatusToRiderEstado(status: TransactionStatus): Ri
   return null;
 }
 
+function isDriverIncomeStatus(status: TransactionStatus) {
+  return status === TransactionStatus.RESERVED || status === TransactionStatus.LIQUIDATED;
+}
+
 function buildCallbackPayload(args: {
   trabajoId: string;
   status: TransactionStatus;
@@ -195,7 +202,7 @@ export async function processMercadoPagoPayment(payment: PaymentResponse) {
   const nextStatus = mapMercadoPagoStatusToTransactionStatus(payment.status);
   const gatewayPaymentId = payment.id ? String(payment.id) : null;
 
-  const updatedTransaction = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const transaction = await tx.transaction.findUnique({
       where: { id: transactionId },
     });
@@ -240,7 +247,7 @@ export async function processMercadoPagoPayment(payment: PaymentResponse) {
       }
     }
 
-    return tx.transaction.update({
+    const updatedTransaction = await tx.transaction.update({
       where: { id: transaction.id },
       data: {
         status: nextStatus,
@@ -253,7 +260,18 @@ export async function processMercadoPagoPayment(payment: PaymentResponse) {
             : transaction.reservedAt,
       },
     });
+
+    return {
+      previousStatus: transaction.status,
+      transaction: updatedTransaction,
+    };
   });
+
+  const updatedTransaction = result.transaction;
+
+  if (isDriverIncomeStatus(result.previousStatus) !== isDriverIncomeStatus(updatedTransaction.status)) {
+    invalidateDriverIncomeCache(updatedTransaction.trabajadorId);
+  }
 
   const callbackPayload = buildCallbackPayload({
     trabajoId: updatedTransaction.trabajoId,

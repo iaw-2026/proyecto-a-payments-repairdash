@@ -12,11 +12,13 @@ import {
 } from "@/lib/income-chart";
 import { prisma } from "@/lib/prisma";
 import type { IncomeDataPoint } from "@/lib/types/income";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 const COMMISSION_SETTINGS_ID = "platform";
 const DEFAULT_COMMISSION_RATE = new Prisma.Decimal("10.00");
 const LIQUIDATION_DELAY_MS = 30_000;
 const LOCAL_LIQUIDATION_TIMER_MS = 5_000;
+const DRIVER_INCOME_CACHE_TTL_SECONDS = 60;
 
 type PaginatedLiquidations = {
   items: Transaction[];
@@ -46,6 +48,14 @@ function roundMoney(amount: Prisma.Decimal) {
 
 function getLiquidationCutoff(now: Date, delayMs: number) {
   return new Date(now.getTime() - delayMs);
+}
+
+function driverIncomeCacheTag(trabajadorId: string) {
+  return `driver-income-${trabajadorId}`;
+}
+
+export function invalidateDriverIncomeCache(trabajadorId: string) {
+  revalidateTag(driverIncomeCacheTag(trabajadorId), { expire: 0 });
 }
 
 async function getCommissionRate(tx: Prisma.TransactionClient) {
@@ -246,6 +256,34 @@ export async function getDriverIncomeChart(
 ): Promise<IncomeDataPoint[]> {
   const { clerkId } = await getAuthUser("driver");
   const { startKey, endExclusiveKey } = getIncomeChartDateWindow({ now });
+
+  return getCachedDriverIncomeChart(clerkId, startKey, endExclusiveKey, now);
+}
+
+async function getCachedDriverIncomeChart(
+  trabajadorId: string,
+  startKey: string,
+  endExclusiveKey: string,
+  now: Date,
+) {
+  const cacheKey = `driver-income-chart-${trabajadorId}-${startKey}-${endExclusiveKey}`;
+
+  return unstable_cache(
+    () => getDriverIncomeChartForRange(trabajadorId, startKey, endExclusiveKey, now),
+    [cacheKey],
+    {
+      revalidate: DRIVER_INCOME_CACHE_TTL_SECONDS,
+      tags: [driverIncomeCacheTag(trabajadorId)],
+    },
+  )();
+}
+
+async function getDriverIncomeChartForRange(
+  trabajadorId: string,
+  startKey: string,
+  endExclusiveKey: string,
+  now: Date,
+) {
   const [reservedStatus, liquidatedStatus] = DRIVER_INCOME_STATUSES;
 
   const rows = await prisma.$queryRaw<DriverIncomeAggregateRow[]>(Prisma.sql`
@@ -257,7 +295,7 @@ export async function getDriverIncomeChart(
         ((COALESCE("reservedAt", "createdAt") AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE})::date)::text AS "day",
         "amount"
       FROM "Transaction"
-      WHERE "trabajadorId" = ${clerkId}
+      WHERE "trabajadorId" = ${trabajadorId}
         AND "status" IN (${reservedStatus}::"TransactionStatus", ${liquidatedStatus}::"TransactionStatus")
         AND COALESCE("reservedAt", "createdAt") >= (${startKey}::date::timestamp AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE})
         AND COALESCE("reservedAt", "createdAt") < (${endExclusiveKey}::date::timestamp AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE})
@@ -274,12 +312,38 @@ export async function getDriverEarnedThisMonth(
 ): Promise<string> {
   const { clerkId } = await getAuthUser("driver");
   const { startKey, endExclusiveKey } = getIncomeMonthDateWindow({ now });
+
+  return getCachedDriverEarnedThisMonth(clerkId, startKey, endExclusiveKey);
+}
+
+async function getCachedDriverEarnedThisMonth(
+  trabajadorId: string,
+  startKey: string,
+  endExclusiveKey: string,
+) {
+  const cacheKey = `driver-income-month-${trabajadorId}-${startKey}-${endExclusiveKey}`;
+
+  return unstable_cache(
+    () => getDriverEarnedThisMonthForRange(trabajadorId, startKey, endExclusiveKey),
+    [cacheKey],
+    {
+      revalidate: DRIVER_INCOME_CACHE_TTL_SECONDS,
+      tags: [driverIncomeCacheTag(trabajadorId)],
+    },
+  )();
+}
+
+async function getDriverEarnedThisMonthForRange(
+  trabajadorId: string,
+  startKey: string,
+  endExclusiveKey: string,
+) {
   const [reservedStatus, liquidatedStatus] = DRIVER_INCOME_STATUSES;
 
   const rows = await prisma.$queryRaw<DriverIncomeTotalRow[]>(Prisma.sql`
     SELECT COALESCE(SUM("amount"), 0)::text AS "amount"
     FROM "Transaction"
-    WHERE "trabajadorId" = ${clerkId}
+    WHERE "trabajadorId" = ${trabajadorId}
       AND "status" IN (${reservedStatus}::"TransactionStatus", ${liquidatedStatus}::"TransactionStatus")
       AND COALESCE("reservedAt", "createdAt") >= (${startKey}::date::timestamp AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE})
       AND COALESCE("reservedAt", "createdAt") < (${endExclusiveKey}::date::timestamp AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE})

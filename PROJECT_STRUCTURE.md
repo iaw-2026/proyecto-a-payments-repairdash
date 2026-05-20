@@ -137,6 +137,7 @@ No se crean interfaces manuales que dupliquen modelos de la DB (`AGENTS.md` Rule
 - Gráfico de ingresos reales de los últimos 7 días con Recharts.
 - `lib/services/liquidations.ts` obtiene el chart y el total mensual con agregaciones SQL por driver, estado y ventana de fechas.
 - `lib/income-chart.ts` normaliza los 7 días, calcula la ventana mensual, rellena días sin ingresos con `0.00` y mantiene `Prisma.Decimal` hasta derivar el valor visual para Recharts.
+- El chart y el total mensual usan cache server-side de 60 segundos por driver; se invalidan por tag cuando una transacción entra o sale de los estados contables del dashboard.
 - Botón de retiro rápido → abre `WithdrawalModal` → ejecuta Server Action.
 
 ### Historial de Retiros (`/driver/withdrawals`)
