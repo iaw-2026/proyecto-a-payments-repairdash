@@ -19,6 +19,7 @@ const DEFAULT_COMMISSION_RATE = new Prisma.Decimal("10.00");
 const LIQUIDATION_DELAY_MS = 30_000;
 const LOCAL_LIQUIDATION_TIMER_MS = 5_000;
 const DRIVER_INCOME_CACHE_TTL_SECONDS = 60;
+const DRIVER_INCOME_CACHE_VERSION = "v2";
 
 type PaginatedLiquidations = {
   items: Transaction[];
@@ -266,7 +267,7 @@ async function getCachedDriverIncomeChart(
   endExclusiveKey: string,
   now: Date,
 ) {
-  const cacheKey = `driver-income-chart-${trabajadorId}-${startKey}-${endExclusiveKey}`;
+  const cacheKey = `${DRIVER_INCOME_CACHE_VERSION}-driver-income-chart-${trabajadorId}-${startKey}-${endExclusiveKey}`;
 
   return unstable_cache(
     () => getDriverIncomeChartForRange(trabajadorId, startKey, endExclusiveKey, now),
@@ -292,13 +293,13 @@ async function getDriverIncomeChartForRange(
       COALESCE(SUM("amount"), 0)::text AS "amount"
     FROM (
       SELECT
-        ((COALESCE("reservedAt", "createdAt") AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE})::date)::text AS "day",
+        ((COALESCE("reservedAt", "createdAt") AT TIME ZONE 'UTC' AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE})::date)::text AS "day",
         "amount"
       FROM "Transaction"
       WHERE "trabajadorId" = ${trabajadorId}
         AND "status" IN (${reservedStatus}::"TransactionStatus", ${liquidatedStatus}::"TransactionStatus")
-        AND COALESCE("reservedAt", "createdAt") >= (${startKey}::date::timestamp AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE})
-        AND COALESCE("reservedAt", "createdAt") < (${endExclusiveKey}::date::timestamp AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE})
+        AND COALESCE("reservedAt", "createdAt") >= ((${startKey}::date::timestamp AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE}) AT TIME ZONE 'UTC')
+        AND COALESCE("reservedAt", "createdAt") < ((${endExclusiveKey}::date::timestamp AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE}) AT TIME ZONE 'UTC')
     ) AS "dailyIncome"
     GROUP BY "day"
     ORDER BY "day" ASC
@@ -321,7 +322,7 @@ async function getCachedDriverEarnedThisMonth(
   startKey: string,
   endExclusiveKey: string,
 ) {
-  const cacheKey = `driver-income-month-${trabajadorId}-${startKey}-${endExclusiveKey}`;
+  const cacheKey = `${DRIVER_INCOME_CACHE_VERSION}-driver-income-month-${trabajadorId}-${startKey}-${endExclusiveKey}`;
 
   return unstable_cache(
     () => getDriverEarnedThisMonthForRange(trabajadorId, startKey, endExclusiveKey),
@@ -345,8 +346,8 @@ async function getDriverEarnedThisMonthForRange(
     FROM "Transaction"
     WHERE "trabajadorId" = ${trabajadorId}
       AND "status" IN (${reservedStatus}::"TransactionStatus", ${liquidatedStatus}::"TransactionStatus")
-      AND COALESCE("reservedAt", "createdAt") >= (${startKey}::date::timestamp AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE})
-      AND COALESCE("reservedAt", "createdAt") < (${endExclusiveKey}::date::timestamp AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE})
+      AND COALESCE("reservedAt", "createdAt") >= ((${startKey}::date::timestamp AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE}) AT TIME ZONE 'UTC')
+      AND COALESCE("reservedAt", "createdAt") < ((${endExclusiveKey}::date::timestamp AT TIME ZONE ${DRIVER_INCOME_TIME_ZONE}) AT TIME ZONE 'UTC')
   `);
 
   return normalizeDriverIncomeTotal(rows[0]?.amount);
