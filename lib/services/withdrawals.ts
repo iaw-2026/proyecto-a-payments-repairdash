@@ -4,9 +4,34 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { Prisma, TransactionStatus, Withdrawal } from "@/generated/prisma/client";
+import { Prisma, TransactionStatus, Withdrawal, WithdrawalStatus } from "@/generated/prisma/client";
 import { getAuthUser } from "@/lib/auth";
 import { randomUUID } from "crypto";
+
+const LOCAL_WITHDRAWAL_APPROVAL_TIMER_MS = 30_000;
+
+export function scheduleWithdrawalApproval(withdrawalId: string) {
+  // TODO: Reemplazar por una tarea persistente antes de produccion.
+  setTimeout(() => {
+    void approveRequestedWithdrawal(withdrawalId);
+  }, LOCAL_WITHDRAWAL_APPROVAL_TIMER_MS);
+}
+
+async function approveRequestedWithdrawal(withdrawalId: string) {
+  try {
+    await prisma.withdrawal.updateMany({
+      where: {
+        id: withdrawalId,
+        status: WithdrawalStatus.REQUESTED,
+      },
+      data: {
+        status: WithdrawalStatus.APPROVED,
+      },
+    });
+  } catch (error) {
+    console.error("No se pudo aprobar automaticamente el retiro", error);
+  }
+}
 
 /**
  * Procesa una solicitud de retiro de forma atómica.
@@ -18,7 +43,7 @@ import { randomUUID } from "crypto";
 export async function createWithdrawalRequest(clerkId: string, amount: number) {
   const decimalAmount = new Prisma.Decimal(amount.toFixed(2));
 
-  return await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     /* 1. Validar Trabajador e Identidad (Rule 2) */
     const trabajador = await tx.trabajador.findUnique({
       where: { clerkId },
@@ -56,7 +81,7 @@ export async function createWithdrawalRequest(clerkId: string, amount: number) {
         id: withdrawalId,
         trabajadorId: clerkId,
         amount: decimalAmount,
-        status: "REQUESTED",
+        status: WithdrawalStatus.REQUESTED,
       },
     });
 
@@ -77,6 +102,10 @@ export async function createWithdrawalRequest(clerkId: string, amount: number) {
       cbuCvu: trabajador.cbuCvu
     };
   });
+
+  scheduleWithdrawalApproval(result.withdrawal.id);
+
+  return result;
 }
 
 /**

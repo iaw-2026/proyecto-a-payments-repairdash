@@ -199,7 +199,7 @@ Prisma DB
 - Tabla de retiros con columnas: ID, Monto, Estado, Fecha
 - Formulario de solicitud de retiro (monto + confirmación)
 - Filtro por estado: `REQUESTED | APPROVED | REJECTED`
-- Conectar con `POST /api/payments/retiro`
+- Conectar con la Server Action `requestWithdrawal`
 
 ---
 
