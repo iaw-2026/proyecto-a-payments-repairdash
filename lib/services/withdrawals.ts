@@ -13,24 +13,26 @@ const LOCAL_WITHDRAWAL_APPROVAL_TIMER_MS = 30_000;
 export function scheduleWithdrawalApproval(withdrawalId: string) {
   // TODO: Reemplazar por una tarea persistente antes de produccion.
   setTimeout(() => {
-    void approveRequestedWithdrawal(withdrawalId);
+    void approveRequestedWithdrawalStatus(withdrawalId).catch((error) => {
+      console.error("No se pudo aprobar automaticamente el retiro", error);
+    });
   }, LOCAL_WITHDRAWAL_APPROVAL_TIMER_MS);
 }
 
-async function approveRequestedWithdrawal(withdrawalId: string) {
-  try {
-    await prisma.withdrawal.updateMany({
-      where: {
-        id: withdrawalId,
-        status: WithdrawalStatus.REQUESTED,
-      },
-      data: {
-        status: WithdrawalStatus.APPROVED,
-      },
-    });
-  } catch (error) {
-    console.error("No se pudo aprobar automaticamente el retiro", error);
-  }
+async function approveRequestedWithdrawalStatus(withdrawalId: string) {
+  return prisma.withdrawal.updateMany({
+    where: {
+      id: withdrawalId,
+      status: WithdrawalStatus.REQUESTED,
+    },
+    data: {
+      status: WithdrawalStatus.APPROVED,
+    },
+  });
+}
+
+export async function approveRequestedWithdrawalByAdmin(withdrawalId: string) {
+  return approveRequestedWithdrawalStatus(withdrawalId);
 }
 
 /**

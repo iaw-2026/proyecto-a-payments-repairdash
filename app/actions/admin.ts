@@ -3,6 +3,7 @@
 import { Prisma } from "@/generated/prisma/client";
 import { getAuthUser } from "@/lib/auth";
 import { updateCommissionSettings } from "@/lib/services/liquidations";
+import { approveRequestedWithdrawalByAdmin } from "@/lib/services/withdrawals";
 import { revalidatePath } from "next/cache";
 
 export type AdminCommissionActionState = {
@@ -30,6 +31,18 @@ function parseCommissionRate(formData: FormData) {
   }
 
   return commissionRate;
+}
+
+function parseWithdrawalId(formData: FormData) {
+  const rawWithdrawalId = formData.get("withdrawalId");
+
+  if (typeof rawWithdrawalId !== "string") {
+    return null;
+  }
+
+  const withdrawalId = rawWithdrawalId.trim();
+
+  return withdrawalId.length > 0 ? withdrawalId : null;
 }
 
 export async function updateAdminCommissionRate(
@@ -61,4 +74,21 @@ export async function updateAdminCommissionRate(
     ok: true,
     message: "Comision actualizada correctamente.",
   };
+}
+
+export async function approveAdminWithdrawal(formData: FormData) {
+  try {
+    await getAuthUser("adminPayments");
+  } catch {
+    return;
+  }
+
+  const withdrawalId = parseWithdrawalId(formData);
+
+  if (!withdrawalId) {
+    return;
+  }
+
+  await approveRequestedWithdrawalByAdmin(withdrawalId);
+  revalidatePath("/admin/withdrawals");
 }
