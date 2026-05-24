@@ -64,7 +64,7 @@ export function AdminTableFilters({
         )}
 
         {showDateRange ? (
-          <div className="grid grid-cols-2 gap-3 lg:contents">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:contents">
             <label className="block">
               <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted lg:sr-only">
                 Desde
