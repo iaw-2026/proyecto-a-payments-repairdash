@@ -38,7 +38,7 @@ function getTooltipAmount(item: unknown) {
  */
 export function IncomeChart({ data }: IncomeChartProps) {
   return (
-    <div className="rounded-xl border border-border bg-surface/70 p-6 backdrop-blur">
+    <div className="min-w-0 rounded-xl border border-border bg-surface/70 p-6 backdrop-blur">
       <div className="mb-6">
         <p className="text-sm font-medium text-muted uppercase tracking-wider">
           Ingresos
@@ -48,7 +48,7 @@ export function IncomeChart({ data }: IncomeChartProps) {
         </h2>
       </div>
 
-      <div className="h-64 w-full">
+      <div className="h-64 min-h-64 min-w-0 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -10 }}>
             <defs>

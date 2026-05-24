@@ -34,6 +34,13 @@ export type LiquidationRunSummary = {
   netTotal: Prisma.Decimal;
 };
 
+export type LiquidationResult = {
+  trabajadorId: string;
+  grossAmount: Prisma.Decimal;
+  commissionAmount: Prisma.Decimal;
+  netAmount: Prisma.Decimal;
+};
+
 type RunPendingLiquidationsOptions = {
   now?: Date;
   delayMs?: number;
@@ -97,6 +104,83 @@ export async function updateCommissionSettings(commissionRate: Prisma.Decimal) {
   });
 }
 
+export async function liquidateReservedTransaction(
+  transactionId: string,
+  now: Date = new Date(),
+): Promise<LiquidationResult | null> {
+  const candidate = await prisma.transaction.findUnique({
+    where: { id: transactionId },
+  });
+
+  if (
+    !candidate ||
+    candidate.status !== TransactionStatus.RESERVED ||
+    candidate.liquidatedAt
+  ) {
+    return null;
+  }
+
+  const result = await prisma.$transaction(async (tx) => {
+    const commissionRate = await getCommissionRate(tx);
+    const grossAmount = candidate.amount;
+    const commissionAmount = roundMoney(grossAmount.mul(commissionRate).div(100));
+    const netAmount = grossAmount.minus(commissionAmount);
+
+    const claimed = await tx.transaction.updateMany({
+      where: {
+        id: candidate.id,
+        status: TransactionStatus.RESERVED,
+        liquidatedAt: null,
+      },
+      data: {
+        status: TransactionStatus.LIQUIDATED,
+        reservedAt: candidate.reservedAt ?? candidate.createdAt,
+        liquidatedAt: now,
+        commissionRate,
+        commissionAmount,
+        netAmount,
+      },
+    });
+
+    if (claimed.count !== 1) {
+      return null;
+    }
+
+    const balance = await tx.balance.findUnique({
+      where: { trabajadorId: candidate.trabajadorId },
+    });
+
+    if (!balance) {
+      throw new Error("BALANCE_NOT_FOUND");
+    }
+
+    const nextLocked = balance.balanceLocked.lessThan(grossAmount)
+      ? zero()
+      : balance.balanceLocked.minus(grossAmount);
+
+    await tx.balance.update({
+      where: { trabajadorId: candidate.trabajadorId },
+      data: {
+        balanceLocked: nextLocked,
+        balanceAvailable: balance.balanceAvailable.plus(netAmount),
+      },
+    });
+
+    return {
+      trabajadorId: candidate.trabajadorId,
+      grossAmount,
+      commissionAmount,
+      netAmount,
+    };
+  });
+
+  if (result) {
+    invalidateDriverIncomeCache(result.trabajadorId);
+  }
+
+  return result;
+}
+
 export async function runPendingLiquidations({
   now = new Date(),
   delayMs = LIQUIDATION_DELAY_MS,
@@ -130,58 +214,7 @@ export async function runPendingLiquidations({
   let netTotal = zero();
 
   for (const candidate of candidates) {
-    const result = await prisma.$transaction(async (tx) => {
-      const commissionRate = await getCommissionRate(tx);
-      const grossAmount = candidate.amount;
-      const commissionAmount = roundMoney(grossAmount.mul(commissionRate).div(100));
-      const netAmount = grossAmount.minus(commissionAmount);
-
-      const claimed = await tx.transaction.updateMany({
-        where: {
-          id: candidate.id,
-          status: TransactionStatus.RESERVED,
-          liquidatedAt: null,
-        },
-        data: {
-          status: TransactionStatus.LIQUIDATED,
-          reservedAt: candidate.reservedAt ?? candidate.createdAt,
-          liquidatedAt: now,
-          commissionRate,
-          commissionAmount,
-          netAmount,
-        },
-      });
-
-      if (claimed.count !== 1) {
-        return null;
-      }
-
-      const balance = await tx.balance.findUnique({
-        where: { trabajadorId: candidate.trabajadorId },
-      });
-
-      if (!balance) {
-        throw new Error("BALANCE_NOT_FOUND");
-      }
-
-      const nextLocked = balance.balanceLocked.lessThan(grossAmount)
-        ? zero()
-        : balance.balanceLocked.minus(grossAmount);
-
-      await tx.balance.update({
-        where: { trabajadorId: candidate.trabajadorId },
-        data: {
-          balanceLocked: nextLocked,
-          balanceAvailable: balance.balanceAvailable.plus(netAmount),
-        },
-      });
-
-      return {
-        grossAmount,
-        commissionAmount,
-        netAmount,
-      };
-    });
+    const result = await liquidateReservedTransaction(candidate.id, now);
 
     if (!result) {
       continue;

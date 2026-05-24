@@ -1,5 +1,7 @@
+import { liquidateAdminTransaction } from "@/app/actions/admin";
 import type { AdminTransactionItem } from "@/lib/services/admin";
 import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
+import { TransactionStatus } from "@/generated/prisma/client";
 import { formatDateTime, shortId } from "@/lib/format";
 import { formatARS } from "@/lib/money";
 
@@ -71,6 +73,9 @@ export function AdminTransactionsTable({
               <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted">
                 ID
               </th>
+              <th className="px-5 py-3.5 text-right text-xs font-semibold uppercase tracking-wider text-muted">
+                Acciones
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/50">
@@ -99,6 +104,19 @@ export function AdminTransactionsTable({
                 </td>
                 <td className="whitespace-nowrap px-5 py-4 font-mono text-xs text-muted">
                   {shortId(transaction.id)}
+                </td>
+                <td className="whitespace-nowrap px-5 py-4 text-right">
+                  {transaction.status === TransactionStatus.RESERVED ? (
+                    <form action={liquidateAdminTransaction}>
+                      <input type="hidden" name="transactionId" value={transaction.id} />
+                      <button
+                        type="submit"
+                        className="rounded-full border border-success/20 bg-success/10 px-3 py-1.5 text-xs font-semibold text-success transition hover:bg-success/15"
+                      >
+                        Liquidar
+                      </button>
+                    </form>
+                  ) : null}
                 </td>
               </tr>
             ))}
@@ -132,6 +150,17 @@ export function AdminTransactionsTable({
                 <UserCell user={trabajador} fallback={transaction.trabajadorId} />
               </div>
             </div>
+            {transaction.status === TransactionStatus.RESERVED ? (
+              <form action={liquidateAdminTransaction}>
+                <input type="hidden" name="transactionId" value={transaction.id} />
+                <button
+                  type="submit"
+                  className="rounded-full border border-success/20 bg-success/10 px-3 py-1.5 text-xs font-semibold text-success transition hover:bg-success/15"
+                >
+                  Liquidar
+                </button>
+              </form>
+            ) : null}
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
               <span>{formatDateTime(transaction.createdAt)}</span>
               <span className="font-mono">{shortId(transaction.id)}</span>

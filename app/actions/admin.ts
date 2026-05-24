@@ -2,7 +2,10 @@
 
 import { Prisma } from "@/generated/prisma/client";
 import { getAuthUser } from "@/lib/auth";
-import { updateCommissionSettings } from "@/lib/services/liquidations";
+import {
+  liquidateReservedTransaction,
+  updateCommissionSettings,
+} from "@/lib/services/liquidations";
 import { approveRequestedWithdrawalByAdmin } from "@/lib/services/withdrawals";
 import { revalidatePath } from "next/cache";
 
@@ -43,6 +46,18 @@ function parseWithdrawalId(formData: FormData) {
   const withdrawalId = rawWithdrawalId.trim();
 
   return withdrawalId.length > 0 ? withdrawalId : null;
+}
+
+function parseTransactionId(formData: FormData) {
+  const rawTransactionId = formData.get("transactionId");
+
+  if (typeof rawTransactionId !== "string") {
+    return null;
+  }
+
+  const transactionId = rawTransactionId.trim();
+
+  return transactionId.length > 0 ? transactionId : null;
 }
 
 export async function updateAdminCommissionRate(
@@ -91,4 +106,29 @@ export async function approveAdminWithdrawal(formData: FormData) {
 
   await approveRequestedWithdrawalByAdmin(withdrawalId);
   revalidatePath("/admin/withdrawals");
+}
+
+export async function liquidateAdminTransaction(formData: FormData) {
+  try {
+    await getAuthUser("adminPayments");
+  } catch {
+    return;
+  }
+
+  const transactionId = parseTransactionId(formData);
+
+  if (!transactionId) {
+    return;
+  }
+
+  const result = await liquidateReservedTransaction(transactionId);
+  revalidatePath("/admin/transactions");
+
+  if (!result) {
+    return;
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/driver");
+  revalidatePath("/driver/liquidations");
 }
