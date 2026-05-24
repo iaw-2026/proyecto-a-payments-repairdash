@@ -112,12 +112,34 @@ export async function liquidateReservedTransaction(
     where: { id: transactionId },
   });
 
-  if (
-    !candidate ||
-    candidate.status !== TransactionStatus.RESERVED ||
-    candidate.liquidatedAt
-  ) {
+  if (!candidate || candidate.status !== TransactionStatus.RESERVED) {
     return null;
+  }
+
+  if (candidate.liquidatedAt) {
+    const repaired = await prisma.transaction.updateMany({
+      where: {
+        id: candidate.id,
+        status: TransactionStatus.RESERVED,
+        liquidatedAt: { not: null },
+      },
+      data: {
+        status: TransactionStatus.LIQUIDATED,
+      },
+    });
+
+    if (repaired.count !== 1) {
+      return null;
+    }
+
+    invalidateDriverIncomeCache(candidate.trabajadorId);
+
+    return {
+      trabajadorId: candidate.trabajadorId,
+      grossAmount: candidate.amount,
+      commissionAmount: candidate.commissionAmount ?? zero(),
+      netAmount: candidate.netAmount ?? zero(),
+    };
   }
 
   const result = await prisma.$transaction(async (tx) => {
