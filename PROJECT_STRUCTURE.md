@@ -217,12 +217,12 @@ No hay pantalla admin de transacciones ni disputas en el MVP.
 9. `app/api/payments/webhook/route.ts` recibe `data.id`, consulta el pago real en Mercado Pago y vuelve a `lib/services/checkout.ts`.
 10. Si el pago esta aprobado, Payments marca la transaccion como `RESERVED`, guarda `gatewayPaymentId` / `reservedAt` y suma el bruto a `Balance.balanceLocked`.
 11. Despues de persistir la DB, Payments avisa a Rider App con `sendRiderPaymentCallback`.
-12. Para desarrollo/MVP, Payments agenda `schedulePendingLiquidations()` con `setTimeout` de 5 segundos.
+12. Para desarrollo/MVP, Payments agenda `schedulePendingLiquidations()` con `setTimeout` de 30 segundos.
 
 ### Flujo de Liquidacion con Comision
 
 1. `lib/services/checkout.ts` recibe pago aprobado y guarda el bruto en `balanceLocked`.
-2. `schedulePendingLiquidations()` espera 5 segundos y llama `runPendingLiquidations({ delayMs: 0 })`.
+2. `schedulePendingLiquidations()` espera 30 segundos y llama `runPendingLiquidations({ delayMs: 0 })`.
 3. `lib/services/liquidations.ts` busca transacciones `RESERVED`, lee `CommissionSettings` y calcula bruto, comision y neto con `Prisma.Decimal`.
 4. En una transaccion atomica, marca la `Transaction` como `LIQUIDATED`, guarda `commissionRate`, `commissionAmount`, `netAmount` y `liquidatedAt`.
 5. En esa misma transaccion, mueve saldo: resta el bruto de `Balance.balanceLocked` y suma el neto a `Balance.balanceAvailable`.

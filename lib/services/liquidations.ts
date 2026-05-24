@@ -17,7 +17,7 @@ import { revalidateTag, unstable_cache } from "next/cache";
 const COMMISSION_SETTINGS_ID = "platform";
 const DEFAULT_COMMISSION_RATE = new Prisma.Decimal("10.00");
 const LIQUIDATION_DELAY_MS = 30_000;
-const LOCAL_LIQUIDATION_TIMER_MS = 5_000;
+const LOCAL_LIQUIDATION_TIMER_MS = 30_000;
 const DRIVER_INCOME_CACHE_TTL_SECONDS = 60;
 const DRIVER_INCOME_CACHE_VERSION = "v2";
 
