@@ -5,6 +5,14 @@ export const metadata: Metadata = {
   title: "Acceso | Repairdash Payments",
   description:
     "Accedé al sistema de pagos, balances, liquidaciones y retiros de Repairdash.",
+  openGraph: {
+    title: "Acceso | Repairdash Payments",
+    description:
+      "Accedé al sistema de pagos, balances, liquidaciones y retiros de Repairdash.",
+    type: "website",
+    locale: "es_AR",
+    siteName: "Repairdash Payments",
+  },
 };
 
 export default function Home() {
@@ -14,12 +22,6 @@ export default function Home() {
         <header className="flex items-center justify-between border-b border-border/80 pb-5">
           <Link href="/" className="text-base font-bold text-foreground">
             Repairdash Payments
-          </Link>
-          <Link
-            href="/sign-in"
-            className="hidden rounded-md border border-border px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:border-accent/60 hover:bg-accent-subtle sm:inline-flex"
-          >
-            Entrar
           </Link>
         </header>
 
@@ -40,7 +42,7 @@ export default function Home() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/sign-in"
-                className="inline-flex items-center justify-center rounded-md bg-accent px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-accent-hover hover:shadow-[0_0_20px_rgba(245,0,241,0.25)]"
+                className="inline-flex items-center justify-center rounded-md bg-accent px-6 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover hover:shadow-[0_0_20px_rgba(245,0,241,0.25)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-hover"
               >
                 Iniciar sesión
               </Link>
@@ -57,67 +59,76 @@ export default function Home() {
             <div className="flex items-start justify-between gap-4 border-b border-border pb-4">
               <div>
                 <p className="text-sm font-semibold text-foreground">
-                  Panel operativo
+                  Acceso por perfil
                 </p>
-                <p className="mt-1 text-xs text-muted">Resumen de actividad</p>
+                <p className="mt-1 text-xs text-muted">
+                  Cada rol ve herramientas distintas
+                </p>
               </div>
-              <span className="rounded-md bg-success/15 px-3 py-1 text-xs font-semibold text-success">
-                Activo
+              <span className="rounded-md bg-accent-subtle px-3 py-1 text-xs font-semibold text-foreground">
+                Autenticación
               </span>
             </div>
 
-            <div className="grid grid-cols-2 border-b border-border">
-              <div className="border-r border-border py-5 pr-4">
-                <p className="text-xs font-medium text-muted">Disponible</p>
-                <p className="mt-2 text-2xl font-bold text-foreground">
-                  $128.400
-                </p>
-              </div>
-              <div className="py-5 pl-4">
-                <p className="text-xs font-medium text-muted">Reservado</p>
-                <p className="mt-2 text-2xl font-bold text-warning">
-                  $42.900
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-3 pt-5">
-              <div className="flex items-center justify-between rounded-md border border-border/80 bg-background/25 px-4 py-3">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">
-                    Cobro confirmado
-                  </p>
-                  <p className="mt-1 text-xs text-muted">Trabajo RD-1048</p>
+            <div className="space-y-4 pt-5">
+              <div className="rounded-md border border-border/80 bg-background/25 p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-foreground">
+                      Rider
+                    </p>
+                    <p className="mt-2 text-sm font-semibold text-foreground">
+                      Pagos y seguimiento de trabajos
+                    </p>
+                  </div>
+                  <span className="rounded-md bg-success/15 px-3 py-1 text-xs font-semibold text-success">
+                    Cliente
+                  </span>
                 </div>
-                <span className="text-sm font-semibold text-success">
-                  Liquidado
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between rounded-md border border-border/80 bg-background/25 px-4 py-3">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">
-                    Solicitud de retiro
-                  </p>
-                  <p className="mt-1 text-xs text-muted">
-                    Pendiente de revisión
-                  </p>
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <div className="rounded-md border border-border/70 bg-surface/50 p-3">
+                    <p className="text-xs text-muted">Checkout</p>
+                    <p className="mt-1 text-sm font-semibold text-foreground">
+                      Pago seguro
+                    </p>
+                  </div>
+                  <div className="rounded-md border border-border/70 bg-surface/50 p-3">
+                    <p className="text-xs text-muted">Historial</p>
+                    <p className="mt-1 text-sm font-semibold text-foreground">
+                      Estados claros
+                    </p>
+                  </div>
                 </div>
-                <span className="text-sm font-semibold text-warning">
-                  En curso
-                </span>
               </div>
 
-              <div className="flex items-center justify-between rounded-md border border-border/80 bg-background/25 px-4 py-3">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">
-                    Nueva transacción
-                  </p>
-                  <p className="mt-1 text-xs text-muted">Pago registrado</p>
+              <div className="rounded-md border border-border/80 bg-background/25 p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-warning">
+                      Driver
+                    </p>
+                    <p className="mt-2 text-sm font-semibold text-foreground">
+                      Balances, liquidaciones y retiros
+                    </p>
+                  </div>
+                  <span className="rounded-md bg-warning/15 px-3 py-1 text-xs font-semibold text-warning">
+                    Trabajador
+                  </span>
                 </div>
-                <span className="text-sm font-semibold text-accent">
-                  Reservado
-                </span>
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <div className="rounded-md border border-border/70 bg-surface/50 p-3">
+                    <p className="text-xs text-muted">Balance</p>
+                    <p className="mt-1 text-sm font-semibold text-foreground">
+                      Disponible
+                    </p>
+                  </div>
+                  <div className="rounded-md border border-border/70 bg-surface/50 p-3">
+                    <p className="text-xs text-muted">Retiros</p>
+                    <p className="mt-1 text-sm font-semibold text-foreground">
+                      Solicitudes
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </aside>

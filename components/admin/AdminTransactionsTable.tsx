@@ -59,7 +59,7 @@ export function AdminTransactionsTable({
                 Trabajo
               </th>
               <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted">
-                Cliente
+                Rider
               </th>
               <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted">
                 Driver
@@ -142,7 +142,7 @@ export function AdminTransactionsTable({
             </div>
             <div className="grid gap-3 text-sm">
               <div className="min-w-0">
-                <p className="text-xs uppercase tracking-wider text-muted">Cliente</p>
+                <p className="text-xs uppercase tracking-wider text-muted">Rider</p>
                 <UserCell user={cliente} fallback={transaction.clientId} />
               </div>
               <div className="min-w-0">
