@@ -238,7 +238,6 @@ No hay pantalla admin de disputas en el MVP.
 4. En una transaccion atomica, marca la `Transaction` como `LIQUIDATED`, guarda `commissionRate`, `commissionAmount`, `netAmount` y `liquidatedAt`.
 5. En esa misma transaccion, mueve saldo: resta el bruto de `Balance.balanceLocked` y suma el neto a `Balance.balanceAvailable`.
 6. Si el timer se traba o se desea liquidar antes, admin puede usar el boton "Liquidar" en `/admin/transactions`; la accion es idempotente y no duplica saldos.
-7. Antes de produccion, reemplazar el `setTimeout` por el endpoint protegido `POST /api/cron/liquidations`.
 
 ### Archivos principales
 | Archivo | Responsabilidad |
@@ -252,7 +251,6 @@ No hay pantalla admin de disputas en el MVP.
 | `lib/internal-auth.ts` | Validacion de `x-internal-api-key` para endpoints internos. |
 | `app/api/payments/checkout/route.ts` | Endpoint externo llamado por Rider App para iniciar el checkout. |
 | `app/api/payments/webhook/route.ts` | Endpoint llamado por Mercado Pago con notificaciones de pago. |
-| `app/api/cron/liquidations/route.ts` | Endpoint protegido para reemplazar el timer por cron antes de produccion. |
 | `app/(app)/rider/page.tsx` | Pantalla Rider y confirmacion previa a Mercado Pago. |
 
 ### Variables de entorno
