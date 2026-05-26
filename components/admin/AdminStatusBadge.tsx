@@ -21,6 +21,11 @@ const STATUS_CONFIG: Record<
     dotClass: "bg-success",
     badgeClass: "border-success/20 bg-success/10 text-success",
   },
+  TRANSFERRED: {
+    label: "Transferido",
+    dotClass: "bg-success",
+    badgeClass: "border-success/20 bg-success/10 text-success",
+  },
   DISPUTED: {
     label: "En disputa",
     dotClass: "bg-danger",

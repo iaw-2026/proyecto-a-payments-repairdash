@@ -21,14 +21,32 @@ export function scheduleWithdrawalApproval(withdrawalId: string) {
 }
 
 async function approveRequestedWithdrawalStatus(withdrawalId: string) {
-  return prisma.withdrawal.updateMany({
-    where: {
-      id: withdrawalId,
-      status: WithdrawalStatus.REQUESTED,
-    },
-    data: {
-      status: WithdrawalStatus.APPROVED,
-    },
+  return prisma.$transaction(async (tx) => {
+    const withdrawal = await tx.withdrawal.updateMany({
+      where: {
+        id: withdrawalId,
+        status: WithdrawalStatus.REQUESTED,
+      },
+      data: {
+        status: WithdrawalStatus.APPROVED,
+      },
+    });
+
+    if (withdrawal.count !== 1) {
+      return withdrawal;
+    }
+
+    await tx.transaction.updateMany({
+      where: {
+        trabajoId: `withdrawal:${withdrawalId}`,
+        status: TransactionStatus.PENDING,
+      },
+      data: {
+        status: TransactionStatus.TRANSFERRED,
+      },
+    });
+
+    return withdrawal;
   });
 }
 

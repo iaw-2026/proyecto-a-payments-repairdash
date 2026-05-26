@@ -18,6 +18,7 @@ const transactionStatusOptions = [
   { value: TransactionStatus.PENDING, label: "Pendiente" },
   { value: TransactionStatus.RESERVED, label: "Reservada" },
   { value: TransactionStatus.LIQUIDATED, label: "Liquidada" },
+  { value: TransactionStatus.TRANSFERRED, label: "Transferido" },
   { value: TransactionStatus.DISPUTED, label: "En disputa" },
   { value: TransactionStatus.REFUNDED, label: "Reembolsada" },
   { value: TransactionStatus.FAILED, label: "Fallida" },
