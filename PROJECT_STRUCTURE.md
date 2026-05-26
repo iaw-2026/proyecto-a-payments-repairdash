@@ -146,6 +146,8 @@ No se crean interfaces manuales que dupliquen modelos de la DB (`AGENTS.md` Rule
 - `loading.tsx` con skeleton que refleja la estructura de la tabla.
 - Empty state cuando no hay registros.
 - Componente `PaginationControls` reutilizable (Client Component con `usePathname` + `useSearchParams`).
+- Los retiros pasan de `REQUESTED` a `APPROVED` automaticamente con timer local de 30 segundos.
+- Si el timer se traba, admin puede aprobar manualmente desde `/admin/withdrawals`.
 
 ### Flujo de Retiro
 1. Driver hace click en "Retirar" → `WithdrawalModal` (Client Component).
@@ -160,17 +162,26 @@ No se crean interfaces manuales que dupliquen modelos de la DB (`AGENTS.md` Rule
 
 ### Rutas
 - `/admin`: dashboard con metricas mensuales, estados de transacciones, saldos agregados y accion rapida para modificar comision.
-- `/admin/withdrawals`: listado paginado de retiros con filtros por busqueda, estado y fechas. No aprueba ni rechaza retiros.
+- `/admin/transactions`: listado paginado de transacciones con filtros por busqueda, estado y fechas. Permite liquidar manualmente pagos `RESERVED`.
+- `/admin/withdrawals`: listado paginado de retiros con filtros por busqueda, estado y fechas. Permite aprobar manualmente retiros `REQUESTED`.
 - `/admin/drivers`: listado paginado de trabajadores con composicion `Trabajador` + `Balance`.
 - `/admin/riders`: listado paginado de clientes/riders con volumen pagado y actividad reciente.
 
-No hay pantalla admin de transacciones ni disputas en el MVP.
+No hay pantalla admin de disputas en el MVP.
 
 ### Backend
 - `lib/services/admin.ts` contiene las queries Prisma, agregaciones, filtros y paginacion del admin.
 - Las paginas admin no hacen queries directas a Prisma; solo llaman services.
-- `app/actions/admin.ts` contiene Server Actions del admin. Hoy maneja la actualizacion de comision y valida `adminPayments`.
+- `app/actions/admin.ts` contiene Server Actions del admin. Maneja actualizacion de comision, liquidacion manual de transacciones y aprobacion manual de retiros; todas validan `adminPayments`.
 - Las metricas calculadas salen de agregaciones Prisma y deben mantener el comentario `// TODO: Dato calculado mediante agregacion`.
+
+### Acciones manuales idempotentes
+- **Liquidar pago:** en `/admin/transactions`, el boton "Liquidar" aparece solo para `Transaction.status = RESERVED`. Llama a `liquidateAdminTransaction()` y luego a `liquidateReservedTransaction()`.
+- La liquidacion manual usa el mismo camino contable que el timer: calcula comision/neto con `Prisma.Decimal`, marca `LIQUIDATED`, completa `liquidatedAt` y mueve saldo de `Balance.balanceLocked` a `Balance.balanceAvailable`.
+- Es idempotente: la actualizacion reclama la transaccion solo si sigue `RESERVED` y `liquidatedAt` es `null`. Si el timer ya la liquido, el admin ya no puede volver a liquidarla; despues de refrescar, el boton desaparece.
+- Si un webhook repetido dejara una transaccion inconsistente como `RESERVED` pero con `liquidatedAt`, la accion manual repara solo el `status` a `LIQUIDATED` sin mover saldo otra vez.
+- **Aprobar retiro:** en `/admin/withdrawals`, el boton "Aprobar" aparece solo para `Withdrawal.status = REQUESTED`. Llama a `approveAdminWithdrawal()` y luego a `approveRequestedWithdrawalByAdmin()`.
+- La aprobacion manual es idempotente: solo cambia `REQUESTED -> APPROVED`. Si el timer de 30 segundos ya aprobo el retiro, el admin ya no puede aprobarlo de nuevo; despues de refrescar, el boton desaparece.
 
 ### Cache de metricas admin
 - `/admin` usa cache server-side de 60 segundos solo para las metricas visibles del dashboard: volumen bruto, comisiones y neto liquidado.
@@ -226,7 +237,8 @@ No hay pantalla admin de transacciones ni disputas en el MVP.
 3. `lib/services/liquidations.ts` busca transacciones `RESERVED`, lee `CommissionSettings` y calcula bruto, comision y neto con `Prisma.Decimal`.
 4. En una transaccion atomica, marca la `Transaction` como `LIQUIDATED`, guarda `commissionRate`, `commissionAmount`, `netAmount` y `liquidatedAt`.
 5. En esa misma transaccion, mueve saldo: resta el bruto de `Balance.balanceLocked` y suma el neto a `Balance.balanceAvailable`.
-6. Antes de produccion, reemplazar el `setTimeout` por el endpoint protegido `POST /api/cron/liquidations`.
+6. Si el timer se traba o se desea liquidar antes, admin puede usar el boton "Liquidar" en `/admin/transactions`; la accion es idempotente y no duplica saldos.
+7. Antes de produccion, reemplazar el `setTimeout` por el endpoint protegido `POST /api/cron/liquidations`.
 
 ### Archivos principales
 | Archivo | Responsabilidad |

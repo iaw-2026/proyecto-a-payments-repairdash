@@ -6,6 +6,7 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma, TransactionStatus, Withdrawal, WithdrawalStatus } from "@/generated/prisma/client";
 import { getAuthUser } from "@/lib/auth";
+import { validateAuthenticatedWithdrawal } from "@/lib/validations/withdrawal";
 import { randomUUID } from "crypto";
 
 const LOCAL_WITHDRAWAL_APPROVAL_TIMER_MS = 30_000;
@@ -42,8 +43,9 @@ export async function approveRequestedWithdrawalByAdmin(withdrawalId: string) {
  * - Rule 2: Separación de modelos Trabajador/Balance.
  * - Rule 3: Precisión Decimal para integridad financiera.
  */
-export async function createWithdrawalRequest(clerkId: string, amount: number) {
-  const decimalAmount = new Prisma.Decimal(amount.toFixed(2));
+export async function createWithdrawalRequest(clerkId: string, amount: string) {
+  const input = validateAuthenticatedWithdrawal({ amount });
+  const decimalAmount = new Prisma.Decimal(input.amount);
 
   const result = await prisma.$transaction(async (tx) => {
     /* 1. Validar Trabajador e Identidad (Rule 2) */
