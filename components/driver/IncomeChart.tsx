@@ -9,6 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { formatARS } from "@/lib/money";
 import type { IncomeDataPoint } from "@/lib/types/income";
 
 interface IncomeChartProps {
@@ -21,6 +22,14 @@ function formatCompact(value: number): string {
   return value.toString();
 }
 
+function getTooltipAmount(item: unknown) {
+  if (!item || typeof item !== "object" || !("payload" in item)) {
+    return "0.00";
+  }
+
+  return (item as { payload?: IncomeDataPoint }).payload?.amount ?? "0.00";
+}
+
 /**
  * Gráfico de área que muestra ingresos de los últimos 7 días.
  *
@@ -29,17 +38,17 @@ function formatCompact(value: number): string {
  */
 export function IncomeChart({ data }: IncomeChartProps) {
   return (
-    <div className="rounded-xl border border-border bg-surface/70 p-6 backdrop-blur">
+    <div className="min-w-0 rounded-xl border border-border bg-surface/70 p-6 backdrop-blur">
       <div className="mb-6">
         <p className="text-sm font-medium text-muted uppercase tracking-wider">
           Ingresos
         </p>
-        <h3 className="mt-1 text-xl font-bold text-foreground">
+        <h2 className="mt-1 text-xl font-bold text-foreground">
           Últimos 7 días
-        </h3>
+        </h2>
       </div>
 
-      <div className="h-64 w-full">
+      <div className="h-64 min-h-64 min-w-0 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -10 }}>
             <defs>
@@ -59,7 +68,7 @@ export function IncomeChart({ data }: IncomeChartProps) {
               dataKey="day"
               axisLine={false}
               tickLine={false}
-              tick={{ fill: "#8D62A5", fontSize: 12, fontWeight: 500 }}
+              tick={{ fill: "#BE97D5", fontSize: 12, fontWeight: 500 }}
               dy={8}
             />
 
@@ -67,7 +76,7 @@ export function IncomeChart({ data }: IncomeChartProps) {
               axisLine={false}
               tickLine={false}
               tickFormatter={formatCompact}
-              tick={{ fill: "#8D62A5", fontSize: 12 }}
+              tick={{ fill: "#BE97D5", fontSize: 12 }}
               width={45}
             />
 
@@ -80,19 +89,15 @@ export function IncomeChart({ data }: IncomeChartProps) {
                 fontSize: "0.875rem",
               }}
               labelStyle={{ color: "#C392DD", fontWeight: 500 }}
-              formatter={(value) => [
-                new Intl.NumberFormat("es-AR", {
-                  style: "currency",
-                  currency: "ARS",
-                  maximumFractionDigits: 0,
-                }).format(Number(value)),
+              formatter={(_, __, item) => [
+                formatARS(getTooltipAmount(item)),
                 "Ingreso",
               ]}
             />
 
             <Area
               type="monotone"
-              dataKey="amount"
+              dataKey="chartAmount"
               stroke="#F500F1"
               strokeWidth={2}
               fill="url(#incomeGradient)"

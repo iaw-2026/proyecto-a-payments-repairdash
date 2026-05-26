@@ -5,6 +5,7 @@ function getStatusClassName(status: TransactionStatus) {
     PENDING: "border-warning/20 bg-warning/10 text-warning",
     RESERVED: "border-success/20 bg-success/10 text-success",
     LIQUIDATED: "border-success/20 bg-success/10 text-success",
+    TRANSFERRED: "border-success/20 bg-success/10 text-success",
     DISPUTED: "border-danger/20 bg-danger/10 text-danger",
     REFUNDED: "border-muted/20 bg-muted/10 text-muted",
     FAILED: "border-danger/20 bg-danger/10 text-danger",

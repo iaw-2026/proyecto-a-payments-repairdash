@@ -8,9 +8,16 @@ export default async function DriverLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  let hasAccess = false;
+
   try {
     await getAuthUser("driver");
+    hasAccess = true;
   } catch {
+    hasAccess = false;
+  }
+
+  if (!hasAccess) {
     redirect("/dashboard");
   }
 

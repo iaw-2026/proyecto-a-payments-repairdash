@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { RiderDashboardData } from "@/lib/types/rider-dashboard";
 import { PaymentActionSection } from "@/components/rider/PaymentActionSection";
 import { PendingPaymentSection } from "@/components/rider/PendingPaymentSection";
@@ -37,12 +36,6 @@ export function RiderDashboardView({
         totalPages={totalPages}
       />
 
-      <Link
-        href="/"
-        className="inline-flex items-center justify-center rounded-md border border-border bg-surface/60 px-5 py-3 text-sm font-semibold text-secondary transition-all hover:border-accent/40 hover:bg-surface-elevated/40 hover:text-foreground"
-      >
-        Volver
-      </Link>
     </div>
   );
 }

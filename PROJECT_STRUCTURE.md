@@ -17,10 +17,11 @@ app/
 │   │   │   └── loading.tsx          # Skeleton de tabla
 │   │   └── liquidations/
 │   │       └── page.tsx             # Historial de liquidaciones
-│   ├── rider/                       # Placeholder
-│   ├── admin/                       # Placeholder
+│   ├── rider/                       # Dashboard y checkout del rider
+│   ├── admin/                       # Dashboard admin, retiros, drivers y riders
 │   └── dashboard/                   # Placeholder
 ├── actions/
+│   ├── admin.ts                     # Server Actions admin (comision)
 │   ├── withdrawals.ts               # Server Action: solicitar retiro
 │   └── liquidations.ts              # Server Action: actualizar comision
 ├── api/
@@ -29,13 +30,22 @@ app/
 └── sign-up/
 
 components/
+├── admin/                           # Componentes del dominio Admin
+│   ├── AdminCommissionAction.tsx     # Card + modal para modificar comision
+│   ├── AdminDashboardMetrics.tsx     # Cards y resumen de metricas admin
+│   ├── AdminTableFilters.tsx         # Filtros reutilizables por searchParams
+│   ├── AdminWithdrawalsTable.tsx     # Tabla responsive de retiros
+│   ├── AdminDriversTable.tsx         # Tabla responsive de drivers
+│   └── AdminRidersTable.tsx          # Tabla responsive de riders
 ├── driver/                          # Componentes del dominio Driver
 │   ├── BalanceCards.tsx              # Tarjetas de saldo (available, locked, earned)
-│   ├── IncomeChart.tsx              # Gráfico de ingresos (Recharts)
+│   ├── IncomeChart.tsx              # Gráfico real de ingresos 7 días (Recharts)
 │   ├── QuickWithdrawalAction.tsx    # Card con botón de retiro rápido
 │   ├── WithdrawalModal.tsx          # Modal para confirmar retiro
 │   └── WithdrawalTable.tsx          # Tabla de historial de retiros
 ├── layout/                          # Shell de la app
+│   ├── AppSidebar.tsx                # Sidebar base reutilizable
+│   ├── AdminSidebar.tsx              # Sidebar admin (items admin)
 │   ├── Topbar.tsx                   # Barra superior
 │   ├── DriverSidebar.tsx            # Sidebar desktop
 │   ├── MobileBottomNav.tsx          # Nav inferior mobile
@@ -55,14 +65,15 @@ lib/
 ├── mock-auth.ts                     # Mock de Clerk (devuelve user_driver_1)
 ├── auth.ts                          # Placeholder Clerk
 ├── money.ts                         # Utilidades de formato monetario
+├── income-chart.ts                  # Normalización de ingresos diarios/mensuales del driver
 ├── errors.ts                        # Helpers de error
 ├── services/                        # Lógica de negocio (ver abajo)
 │   ├── withdrawals.ts
+│   ├── admin.ts                     # Queries/agregaciones admin
 │   ├── balances.ts
 │   ├── transactions.ts
-│   ├── liquidations.ts              # Liquidar RESERVED -> LIQUIDATED
+│   ├── liquidations.ts              # Liquidar RESERVED -> LIQUIDATED e ingresos driver
 │   └── users.ts
-├── mocks/                           # Datos mock para desarrollo
 ├── validations/                     # Esquemas de validación
 ├── integrations/                    # Mercado Pago (placeholder)
 └── types/                           # Tipos auxiliares
@@ -123,7 +134,10 @@ No se crean interfaces manuales que dupliquen modelos de la DB (`AGENTS.md` Rule
 
 ### Dashboard (`/driver`)
 - Tarjetas de balance (disponible, reservado, ganado este mes).
-- Gráfico de ingresos mensuales con Recharts.
+- Gráfico de ingresos reales de los últimos 7 días con Recharts.
+- `lib/services/liquidations.ts` obtiene el chart y el total mensual con agregaciones SQL por driver, estado y ventana de fechas.
+- `lib/income-chart.ts` normaliza los 7 días, calcula la ventana mensual, rellena días sin ingresos con `0.00` y mantiene `Prisma.Decimal` hasta derivar el valor visual para Recharts.
+- El chart y el total mensual usan cache server-side de 60 segundos por driver; se invalidan por tag cuando una transacción entra o sale de los estados contables del dashboard.
 - Botón de retiro rápido → abre `WithdrawalModal` → ejecuta Server Action.
 
 ### Historial de Retiros (`/driver/withdrawals`)
@@ -132,6 +146,8 @@ No se crean interfaces manuales que dupliquen modelos de la DB (`AGENTS.md` Rule
 - `loading.tsx` con skeleton que refleja la estructura de la tabla.
 - Empty state cuando no hay registros.
 - Componente `PaginationControls` reutilizable (Client Component con `usePathname` + `useSearchParams`).
+- Los retiros pasan de `REQUESTED` a `APPROVED` automaticamente con timer local de 30 segundos.
+- Si el timer se traba, admin puede aprobar manualmente desde `/admin/withdrawals`.
 
 ### Flujo de Retiro
 1. Driver hace click en "Retirar" → `WithdrawalModal` (Client Component).
@@ -139,6 +155,56 @@ No se crean interfaces manuales que dupliquen modelos de la DB (`AGENTS.md` Rule
 3. Action valida auth + input → llama a `createWithdrawalRequest` (Service).
 4. Service ejecuta transacción atómica: valida saldo → debita balance → crea Withdrawal → crea Transaction.
 5. Action ejecuta `revalidatePath("/driver")` → dashboard se actualiza.
+
+---
+
+## Admin - MVP Operativo
+
+### Rutas
+- `/admin`: dashboard con metricas mensuales, estados de transacciones, saldos agregados y accion rapida para modificar comision.
+- `/admin/transactions`: listado paginado de transacciones con filtros por busqueda, estado y fechas. Permite liquidar manualmente pagos `RESERVED`.
+- `/admin/withdrawals`: listado paginado de retiros con filtros por busqueda, estado y fechas. Permite aprobar manualmente retiros `REQUESTED`.
+- `/admin/drivers`: listado paginado de trabajadores con composicion `Trabajador` + `Balance`.
+- `/admin/riders`: listado paginado de clientes/riders con volumen pagado y actividad reciente.
+
+No hay pantalla admin de disputas en el MVP.
+
+### Backend
+- `lib/services/admin.ts` contiene las queries Prisma, agregaciones, filtros y paginacion del admin.
+- Las paginas admin no hacen queries directas a Prisma; solo llaman services.
+- `app/actions/admin.ts` contiene Server Actions del admin. Maneja actualizacion de comision, liquidacion manual de transacciones y aprobacion manual de retiros; todas validan `adminPayments`.
+- Las metricas calculadas salen de agregaciones Prisma y deben mantener el comentario `// TODO: Dato calculado mediante agregacion`.
+
+### Acciones manuales idempotentes
+- **Liquidar pago:** en `/admin/transactions`, el boton "Liquidar" aparece solo para `Transaction.status = RESERVED`. Llama a `liquidateAdminTransaction()` y luego a `liquidateReservedTransaction()`.
+- La liquidacion manual usa el mismo camino contable que el timer: calcula comision/neto con `Prisma.Decimal`, marca `LIQUIDATED`, completa `liquidatedAt` y mueve saldo de `Balance.balanceLocked` a `Balance.balanceAvailable`.
+- Es idempotente: la actualizacion reclama la transaccion solo si sigue `RESERVED` y `liquidatedAt` es `null`. Si el timer ya la liquido, el admin ya no puede volver a liquidarla; despues de refrescar, el boton desaparece.
+- Si un webhook repetido dejara una transaccion inconsistente como `RESERVED` pero con `liquidatedAt`, la accion manual repara solo el `status` a `LIQUIDATED` sin mover saldo otra vez.
+- **Aprobar retiro:** en `/admin/withdrawals`, el boton "Aprobar" aparece solo para `Withdrawal.status = REQUESTED`. Llama a `approveAdminWithdrawal()` y luego a `approveRequestedWithdrawalByAdmin()`.
+- La aprobacion manual es idempotente: solo cambia `REQUESTED -> APPROVED`. Si el timer de 30 segundos ya aprobo el retiro, el admin ya no puede aprobarlo de nuevo; despues de refrescar, el boton desaparece.
+
+### Cache de metricas admin
+- `/admin` usa cache server-side de 60 segundos solo para las metricas visibles del dashboard: volumen bruto, comisiones y neto liquidado.
+- Hay dos entradas cacheadas independientes:
+  - `admin-metrics-day-YYYY-MM-DD`: rango desde el inicio del dia local hasta el inicio del dia siguiente.
+  - `admin-metrics-month-YYYY-MM`: rango desde el inicio del mes local hasta el inicio del mes siguiente.
+- La clave se construye con el inicio estable del periodo, nunca con la hora exacta del request. Next.js maneja el vencimiento con el TTL de 60 segundos.
+- Los montos se serializan como string dentro del cache y se rehidratan a `Prisma.Decimal` antes de llegar a la UI.
+- `CommissionSettings` no se cachea en este flujo; la card de modificar comision lee el valor fresco.
+- No cachear tablas admin (`transactions`, `drivers`, `riders`, `withdrawals`), busquedas, filtros ni paginacion. Para esos casos priorizar frescura y optimizacion de queries.
+
+### UI y navegacion
+- `components/layout/AppSidebar.tsx` es la sidebar base reutilizable.
+- `DriverSidebar` y `AdminSidebar` solo definen items y reutilizan `AppSidebar`.
+- Las secciones admin viven en sidebar, no en topbar.
+- `components/admin/AdminTableFilters.tsx` centraliza filtros por URL para reutilizarlos con `PaginationControls`.
+- Las tablas admin siguen el patron de Driver/Rider: tabla desktop + cards mobile + empty state.
+
+### Reglas de datos
+- No crear interfaces espejo de modelos Prisma.
+- Usar tipos generados desde Prisma Client.
+- No aplanar `Trabajador` y `Balance`; usar composicion.
+- No calcular dinero con `number`; mantener `Prisma.Decimal` y formatear al renderizar.
 
 ---
 
@@ -162,29 +228,29 @@ No se crean interfaces manuales que dupliquen modelos de la DB (`AGENTS.md` Rule
 9. `app/api/payments/webhook/route.ts` recibe `data.id`, consulta el pago real en Mercado Pago y vuelve a `lib/services/checkout.ts`.
 10. Si el pago esta aprobado, Payments marca la transaccion como `RESERVED`, guarda `gatewayPaymentId` / `reservedAt` y suma el bruto a `Balance.balanceLocked`.
 11. Despues de persistir la DB, Payments avisa a Rider App con `sendRiderPaymentCallback`.
-12. Para desarrollo/MVP, Payments agenda `schedulePendingLiquidations()` con `setTimeout` de 5 segundos.
+12. Para desarrollo/MVP, Payments agenda `schedulePendingLiquidations()` con `setTimeout` de 30 segundos.
 
 ### Flujo de Liquidacion con Comision
 
 1. `lib/services/checkout.ts` recibe pago aprobado y guarda el bruto en `balanceLocked`.
-2. `schedulePendingLiquidations()` espera 5 segundos y llama `runPendingLiquidations({ delayMs: 0 })`.
+2. `schedulePendingLiquidations()` espera 30 segundos y llama `runPendingLiquidations({ delayMs: 0 })`.
 3. `lib/services/liquidations.ts` busca transacciones `RESERVED`, lee `CommissionSettings` y calcula bruto, comision y neto con `Prisma.Decimal`.
 4. En una transaccion atomica, marca la `Transaction` como `LIQUIDATED`, guarda `commissionRate`, `commissionAmount`, `netAmount` y `liquidatedAt`.
 5. En esa misma transaccion, mueve saldo: resta el bruto de `Balance.balanceLocked` y suma el neto a `Balance.balanceAvailable`.
-6. Antes de produccion, reemplazar el `setTimeout` por el endpoint protegido `POST /api/cron/liquidations`.
+6. Si el timer se traba o se desea liquidar antes, admin puede usar el boton "Liquidar" en `/admin/transactions`; la accion es idempotente y no duplica saldos.
 
 ### Archivos principales
 | Archivo | Responsabilidad |
 |---|---|
 | `lib/services/checkout.ts` | Reglas de negocio del checkout, idempotencia por `trabajoId`, procesamiento de webhook y actualizacion de balances. |
-| `lib/services/liquidations.ts` | Reglas de liquidacion, calculo de comision y movimiento de `balanceLocked` a `balanceAvailable`. |
+| `lib/services/liquidations.ts` | Reglas de liquidacion, calculo de comision, movimiento de `balanceLocked` a `balanceAvailable`, chart real y total mensual del driver. |
+| `lib/income-chart.ts` | Helpers puros para ventanas diaria/mensual, labels diarios y normalizacion Decimal de ingresos del driver. |
 | `lib/integrations/mercadopago.ts` | Conexion con SDK de Mercado Pago para crear preferences y consultar pagos. |
 | `lib/integrations/rider-callback.ts` | POST server-to-server hacia Rider App con el resultado del pago. |
 | `lib/validations/checkout.ts` | Validacion Zod del contrato de checkout. |
 | `lib/internal-auth.ts` | Validacion de `x-internal-api-key` para endpoints internos. |
 | `app/api/payments/checkout/route.ts` | Endpoint externo llamado por Rider App para iniciar el checkout. |
 | `app/api/payments/webhook/route.ts` | Endpoint llamado por Mercado Pago con notificaciones de pago. |
-| `app/api/cron/liquidations/route.ts` | Endpoint protegido para reemplazar el timer por cron antes de produccion. |
 | `app/(app)/rider/page.tsx` | Pantalla Rider y confirmacion previa a Mercado Pago. |
 
 ### Variables de entorno

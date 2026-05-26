@@ -12,7 +12,7 @@
 3. [Estructura de Archivos](#estructura)
 4. [Layout Global](#layout-global)
 5. [Dashboard del Driver](#dashboard-driver)
-6. [Mocks y TODOs para datos reales](#mocks-todos)
+6. [Datos reales y TODOs](#datos-reales-todos)
 7. [Componentes UI reutilizables](#componentes-ui)
 
 ---
@@ -117,10 +117,9 @@ components/
     └── MetricCard.tsx          # Card de métrica: icono + label + valor + color
 
 lib/
+├── income-chart.ts             # Helpers de ingresos diarios/mensuales del driver
 ├── types/
-│   └── driver.ts               # Interfaces TS: BalanceData, IncomeDataPoint, TransactionRow
-├── mocks/
-│   └── driver-mocks.ts         # Datos mock del dashboard (ver sección TODOs)
+│   └── income.ts               # IncomeDataPoint para Recharts
 ├── services/                   # Lógica de negocio (Prisma)
 ├── validations/                # Esquemas de validación
 └── prisma.ts                   # Cliente Prisma singleton
@@ -174,67 +173,21 @@ Strip    #F500F1  (accent top border de 2px en MetricCards)
 Prisma DB
   └─ user.trabajador.balance.balanceAvailable  → BalanceCards (REAL)
   └─ user.trabajador.balance.balanceLocked     → BalanceCards (REAL)
-
-lib/mocks/driver-mocks.ts
-  └─ MOCK_EARNED_THIS_MONTH                    → BalanceCards (MOCK ⚠️)
-  └─ MOCK_INCOME_CHART                         → IncomeChart  (MOCK ⚠️)
+  └─ Transaction RESERVED/LIQUIDATED del mes   → BalanceCards Total del Mes (REAL)
+  └─ Transaction RESERVED/LIQUIDATED 7 días    → IncomeChart (REAL)
 ```
 
 ---
 
-## 6. Mocks y TODOs para datos reales {#mocks-todos}
+## 6. Datos reales y TODOs {#datos-reales-todos}
 
-> Todos los items marcados con ⚠️ deben reemplazarse cuando el modelo de datos esté completo.
+### Ingresos del dashboard driver
 
-### `lib/mocks/driver-mocks.ts`
-
-#### `MOCK_EARNED_THIS_MONTH`
-
-```ts
-// ⚠️ TODO: Reemplazar con query real
-// Sumar transacciones LIQUIDATED del mes actual para el trabajadorId
-export const MOCK_EARNED_THIS_MONTH = 187_500;
-```
-
-**Query sugerida cuando esté el schema:**
-```ts
-const earned = await prisma.transaction.aggregate({
-  where: {
-    trabajadorId: driver.clerkId,
-    status: "LIQUIDATED",
-    createdAt: {
-      gte: startOfMonth(new Date()),
-      lte: endOfMonth(new Date()),
-    },
-  },
-  _sum: { amount: true },
-});
-```
-
----
-
-#### `MOCK_INCOME_CHART`
-
-```ts
-// ⚠️ TODO: Reemplazar con query real
-// Agrupar transacciones LIQUIDATED por día (últimos 7 días)
-export const MOCK_INCOME_CHART: IncomeDataPoint[] = [ ... ];
-```
-
-**Query sugerida cuando esté el schema:**
-```ts
-// Requiere: timestamps en Transaction, campo de fecha consistente
-// Agrupar con prisma.$queryRaw o procesar en memoria con date-fns
-const last7Days = await prisma.transaction.findMany({
-  where: {
-    trabajadorId: driver.clerkId,
-    status: "LIQUIDATED",
-    createdAt: { gte: subDays(new Date(), 7) },
-  },
-  orderBy: { createdAt: "asc" },
-});
-// Luego agrupar por día con reduce() y formatear como IncomeDataPoint[]
-```
+- `getDriverEarnedThisMonth()` calcula el total mensual real con una agregación SQL sobre `Transaction.amount`.
+- `getDriverIncomeChart()` calcula el chart de los últimos 7 días con una agregación SQL por día.
+- Ambos flujos filtran por `trabajadorId`, estados `RESERVED` + `LIQUIDATED`, y usan `COALESCE(reservedAt, createdAt)` en zona horaria `America/Argentina/Buenos_Aires`.
+- `lib/income-chart.ts` normaliza ventanas de fecha y mantiene los montos como strings decimales; solo `chartAmount` usa `number` para dibujar en Recharts.
+- Las métricas de ingresos del driver usan cache server-side de 60 segundos y tag por trabajador; el checkout invalida esa cache cuando una transacción empieza o deja de contar como ingreso.
 
 ---
 
@@ -246,7 +199,7 @@ const last7Days = await prisma.transaction.findMany({
 - Tabla de retiros con columnas: ID, Monto, Estado, Fecha
 - Formulario de solicitud de retiro (monto + confirmación)
 - Filtro por estado: `REQUESTED | APPROVED | REJECTED`
-- Conectar con `POST /api/payments/retiro`
+- Conectar con la Server Action `requestWithdrawal`
 
 ---
 
@@ -313,11 +266,11 @@ import { MetricCard } from "@/components/ui/MetricCard";
 
 ```tsx
 import { IncomeChart } from "@/components/driver/IncomeChart";
-import type { IncomeDataPoint } from "@/lib/types/driver";
+import type { IncomeDataPoint } from "@/lib/types/income";
 
 const data: IncomeDataPoint[] = [
-  { day: "Lun", amount: 24300 },
-  { day: "Mar", amount: 18700 },
+  { day: "Lun", amount: "24300.00", chartAmount: 24300 },
+  { day: "Mar", amount: "18700.00", chartAmount: 18700 },
   // ...
 ];
 
@@ -332,16 +285,12 @@ const data: IncomeDataPoint[] = [
 
 ```tsx
 import { BalanceCards } from "@/components/driver/BalanceCards";
-import type { BalanceData } from "@/lib/types/driver";
+import { Balance } from "@/generated/prisma/client";
 
-const data: BalanceData = {
-  available: 45000,
-  reserved: 12300,
-  earnedThisMonth: 187500,
-  currency: "ARS",
-};
+const balance: Balance = await getCurrentDriverBalance();
+const earnedThisMonth = await getDriverEarnedThisMonth();
 
-<BalanceCards data={data} />
+<BalanceCards balance={balance} earnedThisMonth={earnedThisMonth} />
 ```
 
 ---

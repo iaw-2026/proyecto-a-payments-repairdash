@@ -9,7 +9,10 @@ import {
   IncomeChartSkeleton,
   QuickWithdrawalActionSkeleton,
 } from "@/components/driver/DriverDashboardSkeletons";
-import { MOCK_EARNED_THIS_MONTH, MOCK_INCOME_CHART } from "@/lib/mocks/driver-mocks";
+import {
+  getDriverEarnedThisMonth,
+  getDriverIncomeChart,
+} from "@/lib/services/liquidations";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +36,7 @@ export default function DriverDashboardPage() {
       </Suspense>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_0.4fr]">
-        {/* Gráfico: hoy usa mocks, pero queda aislado para una futura query async. */}
+        {/* Gráfico: consulta ingresos agregados por día en DB. */}
         <Suspense fallback={<IncomeChartSkeleton />}>
           <DriverIncomeSection />
         </Suspense>
@@ -81,17 +84,20 @@ async function DriverBalanceSection({
     return <DriverSeedEmptyState />;
   }
 
+  const earnedThisMonth = await getDriverEarnedThisMonth();
+
   return (
     <BalanceCards
       balance={user.trabajador.balance}
-      earnedThisMonth={MOCK_EARNED_THIS_MONTH} // TODO: Dato calculado mediante agregación
+      earnedThisMonth={earnedThisMonth} // TODO: Dato calculado mediante agregación
     />
   );
 }
 
 async function DriverIncomeSection() {
-  // No espera DB por ahora, pero sigue bajo Suspense para mantener el patrón por componente.
-  return <IncomeChart data={MOCK_INCOME_CHART} />;
+  const data = await getDriverIncomeChart();
+
+  return <IncomeChart data={data} />;
 }
 
 async function DriverWithdrawalSection({

@@ -1,6 +1,15 @@
-import { SignIn, SignOutButton } from "@clerk/nextjs";
+import { SignIn } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
+import { SignOutRetryButton } from "@/components/auth/SignOutRetryButton";
+import type { Metadata } from "next";
 import { headers } from "next/headers";
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 type SignInPageProps = {
   searchParams: Promise<{
@@ -58,14 +67,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
             con otra cuenta.
           </p>
           <div className="mt-6">
-            <SignOutButton redirectUrl={signInUrl}>
-              <button
-                type="button"
-                className="rounded-md bg-accent px-5 py-3 text-sm font-semibold text-white transition-all hover:bg-accent-hover"
-              >
-                Cerrar sesión y volver a intentar
-              </button>
-            </SignOutButton>
+            <SignOutRetryButton redirectUrl={signInUrl} />
           </div>
         </div>
       </div>

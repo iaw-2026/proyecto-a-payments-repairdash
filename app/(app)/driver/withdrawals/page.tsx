@@ -74,7 +74,7 @@ export default async function DriverWithdrawalsPage({
 
             <Link
               href="/driver"
-              className="mt-8 inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-accent-hover hover:shadow-lg hover:shadow-accent-glow"
+              className="mt-8 inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover hover:shadow-lg hover:shadow-accent-glow"
             >
               <svg
                 className="h-4 w-4"

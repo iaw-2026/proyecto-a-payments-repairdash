@@ -32,19 +32,22 @@ export function PaginationControls({
   if (totalPages <= 1) return null;
 
   return (
-    <nav className="flex items-center justify-between" aria-label="Paginación">
+    <nav
+      className="grid gap-3 sm:flex sm:items-center sm:justify-between"
+      aria-label="Paginación"
+    >
       <p className="text-sm text-muted">
         Página{" "}
         <span className="font-semibold text-secondary">{currentPage}</span> de{" "}
         <span className="font-semibold text-secondary">{totalPages}</span>
       </p>
 
-      <div className="flex gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:flex">
         {/* Botón Anterior */}
         {currentPage > 1 ? (
           <Link
             href={createPageURL(currentPage - 1)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface/60 px-4 py-2 text-sm font-medium text-secondary transition-all hover:border-accent/40 hover:bg-surface-elevated/40 hover:text-foreground"
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border bg-surface/60 px-4 py-2 text-sm font-medium text-secondary transition-all hover:border-accent/40 hover:bg-surface-elevated/40 hover:text-foreground"
           >
             <svg
               className="h-4 w-4"
@@ -64,7 +67,7 @@ export function PaginationControls({
         ) : (
           <button
             disabled
-            className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-lg border border-border/50 bg-surface/30 px-4 py-2 text-sm font-medium text-muted/50"
+            className="inline-flex cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-border/50 bg-surface/30 px-4 py-2 text-sm font-medium text-muted/50"
           >
             <svg
               className="h-4 w-4"
@@ -87,7 +90,7 @@ export function PaginationControls({
         {currentPage < totalPages ? (
           <Link
             href={createPageURL(currentPage + 1)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface/60 px-4 py-2 text-sm font-medium text-secondary transition-all hover:border-accent/40 hover:bg-surface-elevated/40 hover:text-foreground"
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border bg-surface/60 px-4 py-2 text-sm font-medium text-secondary transition-all hover:border-accent/40 hover:bg-surface-elevated/40 hover:text-foreground"
           >
             Siguiente
             <svg
@@ -107,7 +110,7 @@ export function PaginationControls({
         ) : (
           <button
             disabled
-            className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-lg border border-border/50 bg-surface/30 px-4 py-2 text-sm font-medium text-muted/50"
+            className="inline-flex cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-border/50 bg-surface/30 px-4 py-2 text-sm font-medium text-muted/50"
           >
             Siguiente
             <svg

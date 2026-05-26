@@ -4,9 +4,55 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { Prisma, TransactionStatus, Withdrawal } from "@/generated/prisma/client";
+import { Prisma, TransactionStatus, Withdrawal, WithdrawalStatus } from "@/generated/prisma/client";
 import { getAuthUser } from "@/lib/auth";
+import { validateAuthenticatedWithdrawal } from "@/lib/validations/withdrawal";
 import { randomUUID } from "crypto";
+
+const LOCAL_WITHDRAWAL_APPROVAL_TIMER_MS = 30_000;
+
+export function scheduleWithdrawalApproval(withdrawalId: string) {
+  // TODO: Reemplazar por una tarea persistente antes de produccion.
+  setTimeout(() => {
+    void approveRequestedWithdrawalStatus(withdrawalId).catch((error) => {
+      console.error("No se pudo aprobar automaticamente el retiro", error);
+    });
+  }, LOCAL_WITHDRAWAL_APPROVAL_TIMER_MS);
+}
+
+async function approveRequestedWithdrawalStatus(withdrawalId: string) {
+  return prisma.$transaction(async (tx) => {
+    const withdrawal = await tx.withdrawal.updateMany({
+      where: {
+        id: withdrawalId,
+        status: WithdrawalStatus.REQUESTED,
+      },
+      data: {
+        status: WithdrawalStatus.APPROVED,
+      },
+    });
+
+    if (withdrawal.count !== 1) {
+      return withdrawal;
+    }
+
+    await tx.transaction.updateMany({
+      where: {
+        trabajoId: `withdrawal:${withdrawalId}`,
+        status: TransactionStatus.PENDING,
+      },
+      data: {
+        status: TransactionStatus.TRANSFERRED,
+      },
+    });
+
+    return withdrawal;
+  });
+}
+
+export async function approveRequestedWithdrawalByAdmin(withdrawalId: string) {
+  return approveRequestedWithdrawalStatus(withdrawalId);
+}
 
 /**
  * Procesa una solicitud de retiro de forma atómica.
@@ -15,10 +61,11 @@ import { randomUUID } from "crypto";
  * - Rule 2: Separación de modelos Trabajador/Balance.
  * - Rule 3: Precisión Decimal para integridad financiera.
  */
-export async function createWithdrawalRequest(clerkId: string, amount: number) {
-  const decimalAmount = new Prisma.Decimal(amount.toFixed(2));
+export async function createWithdrawalRequest(clerkId: string, amount: string) {
+  const input = validateAuthenticatedWithdrawal({ amount });
+  const decimalAmount = new Prisma.Decimal(input.amount);
 
-  return await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     /* 1. Validar Trabajador e Identidad (Rule 2) */
     const trabajador = await tx.trabajador.findUnique({
       where: { clerkId },
@@ -56,7 +103,7 @@ export async function createWithdrawalRequest(clerkId: string, amount: number) {
         id: withdrawalId,
         trabajadorId: clerkId,
         amount: decimalAmount,
-        status: "REQUESTED",
+        status: WithdrawalStatus.REQUESTED,
       },
     });
 
@@ -77,6 +124,10 @@ export async function createWithdrawalRequest(clerkId: string, amount: number) {
       cbuCvu: trabajador.cbuCvu
     };
   });
+
+  scheduleWithdrawalApproval(result.withdrawal.id);
+
+  return result;
 }
 
 /**

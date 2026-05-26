@@ -2,7 +2,10 @@ import { Prisma, TransactionStatus } from "@/generated/prisma/client";
 import { getMercadoPagoPayment, createMercadoPagoPreference } from "@/lib/integrations/mercadopago";
 import { sendRiderPaymentCallback } from "@/lib/integrations/rider-callback";
 import { prisma } from "@/lib/prisma";
-import { waitAndRunPendingLiquidations } from "@/lib/services/liquidations";
+import {
+  invalidateDriverIncomeCache,
+  waitAndRunPendingLiquidations,
+} from "@/lib/services/liquidations";
 import type { RiderPaymentCallbackPayload, RiderPaymentEstado } from "@/lib/types/payment-callback";
 import type { CheckoutInput } from "@/lib/validations/checkout";
 import { validateCheckout } from "@/lib/validations/checkout";
@@ -163,10 +166,40 @@ export function mapMercadoPagoStatusToTransactionStatus(status: string | undefin
   return TransactionStatus.PENDING;
 }
 
+function resolveNextTransactionStatus(
+  currentStatus: TransactionStatus,
+  nextStatus: TransactionStatus,
+  liquidatedAt: Date | null,
+) {
+  if (currentStatus === TransactionStatus.RESERVED && liquidatedAt && nextStatus === TransactionStatus.RESERVED) {
+    return TransactionStatus.LIQUIDATED;
+  }
+
+  if (
+    currentStatus === TransactionStatus.LIQUIDATED &&
+    (nextStatus === TransactionStatus.RESERVED || nextStatus === TransactionStatus.PENDING)
+  ) {
+    return TransactionStatus.LIQUIDATED;
+  }
+
+  if (
+    currentStatus === TransactionStatus.RESERVED &&
+    nextStatus === TransactionStatus.PENDING
+  ) {
+    return TransactionStatus.RESERVED;
+  }
+
+  return nextStatus;
+}
+
 export function mapTransactionStatusToRiderEstado(status: TransactionStatus): RiderPaymentEstado | null {
   if (status === TransactionStatus.RESERVED || status === TransactionStatus.LIQUIDATED) return "aceptado";
   if (status === TransactionStatus.FAILED || status === TransactionStatus.REFUNDED) return "cancelado";
   return null;
+}
+
+function isDriverIncomeStatus(status: TransactionStatus) {
+  return status === TransactionStatus.RESERVED || status === TransactionStatus.LIQUIDATED;
 }
 
 function buildCallbackPayload(args: {
@@ -195,7 +228,7 @@ export async function processMercadoPagoPayment(payment: PaymentResponse) {
   const nextStatus = mapMercadoPagoStatusToTransactionStatus(payment.status);
   const gatewayPaymentId = payment.id ? String(payment.id) : null;
 
-  const updatedTransaction = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const transaction = await tx.transaction.findUnique({
       where: { id: transactionId },
     });
@@ -204,9 +237,15 @@ export async function processMercadoPagoPayment(payment: PaymentResponse) {
       throw new CheckoutError("TRANSACTION_NOT_FOUND", "La transacción no existe en Payments.", 404);
     }
 
+    const effectiveNextStatus = resolveNextTransactionStatus(
+      transaction.status,
+      nextStatus,
+      transaction.liquidatedAt,
+    );
+
     // Idempotencia: Mercado Pago puede reenviar webhooks. Solo acreditamos
     // el balanceLocked cuando la transacción todavía no estaba reservada.
-    if (nextStatus === TransactionStatus.RESERVED && transaction.status !== TransactionStatus.RESERVED && transaction.status !== TransactionStatus.LIQUIDATED) {
+    if (effectiveNextStatus === TransactionStatus.RESERVED && transaction.status !== TransactionStatus.RESERVED && transaction.status !== TransactionStatus.LIQUIDATED) {
       const balance = await tx.balance.findUnique({
         where: { trabajadorId: transaction.trabajadorId },
       });
@@ -223,7 +262,7 @@ export async function processMercadoPagoPayment(payment: PaymentResponse) {
       });
     }
 
-    if (nextStatus === TransactionStatus.REFUNDED && transaction.status === TransactionStatus.RESERVED) {
+    if (effectiveNextStatus === TransactionStatus.REFUNDED && transaction.status === TransactionStatus.RESERVED) {
       const balance = await tx.balance.findUnique({
         where: { trabajadorId: transaction.trabajadorId },
       });
@@ -240,20 +279,31 @@ export async function processMercadoPagoPayment(payment: PaymentResponse) {
       }
     }
 
-    return tx.transaction.update({
+    const updatedTransaction = await tx.transaction.update({
       where: { id: transaction.id },
       data: {
-        status: nextStatus,
+        status: effectiveNextStatus,
         gatewayPaymentId,
         reservedAt:
-          nextStatus === TransactionStatus.RESERVED &&
+          effectiveNextStatus === TransactionStatus.RESERVED &&
           transaction.status !== TransactionStatus.RESERVED &&
           transaction.status !== TransactionStatus.LIQUIDATED
             ? new Date()
             : transaction.reservedAt,
       },
     });
+
+    return {
+      previousStatus: transaction.status,
+      transaction: updatedTransaction,
+    };
   });
+
+  const updatedTransaction = result.transaction;
+
+  if (isDriverIncomeStatus(result.previousStatus) !== isDriverIncomeStatus(updatedTransaction.status)) {
+    invalidateDriverIncomeCache(updatedTransaction.trabajadorId);
+  }
 
   const callbackPayload = buildCallbackPayload({
     trabajoId: updatedTransaction.trabajoId,
