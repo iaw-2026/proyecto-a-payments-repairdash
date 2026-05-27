@@ -9,8 +9,6 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export const dynamic = "force-dynamic";
-
 /* ── Page Component ── */
 
 export default async function DriverWithdrawalsPage({
