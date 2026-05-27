@@ -1,5 +1,9 @@
 import { Prisma, TransactionStatus } from "@/generated/prisma/client";
-import { getMercadoPagoPayment, createMercadoPagoPreference } from "@/lib/integrations/mercadopago";
+import {
+  createMercadoPagoPreference,
+  getMercadoPagoPayment,
+  updateMercadoPagoPreference,
+} from "@/lib/integrations/mercadopago";
 import { sendRiderPaymentCallback } from "@/lib/integrations/rider-callback";
 import { prisma } from "@/lib/prisma";
 import {
@@ -103,12 +107,32 @@ export async function createCheckout(inputData: unknown, baseUrl: string): Promi
     }
 
     if (transaction.gatewayPreferenceId && transaction.gatewayCheckoutUrl) {
+      const preference = await updateMercadoPagoPreference(
+        transaction.gatewayPreferenceId,
+        {
+          transactionId: transaction.id,
+          trabajoId: transaction.trabajoId,
+          amount: transaction.amount.toString(),
+          description: input.description,
+          payerEmail: cliente.user.email,
+          baseUrl,
+        },
+      );
+      const checkoutUrl = getCheckoutUrlFromPreference(preference);
+
+      if (checkoutUrl !== transaction.gatewayCheckoutUrl) {
+        await prisma.transaction.update({
+          where: { id: transaction.id },
+          data: { gatewayCheckoutUrl: checkoutUrl },
+        });
+      }
+
       return {
         success: true,
         transactionId: transaction.id,
         trabajoId: transaction.trabajoId,
         preferenceId: transaction.gatewayPreferenceId,
-        checkoutUrl: transaction.gatewayCheckoutUrl,
+        checkoutUrl,
       };
     }
   } else {
