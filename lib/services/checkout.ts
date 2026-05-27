@@ -218,7 +218,7 @@ function resolveNextTransactionStatus(
 
 export function mapTransactionStatusToRiderEstado(status: TransactionStatus): RiderPaymentEstado | null {
   if (status === TransactionStatus.RESERVED || status === TransactionStatus.LIQUIDATED) return "aceptado";
-  if (status === TransactionStatus.FAILED || status === TransactionStatus.REFUNDED) return "cancelado";
+  if (status === TransactionStatus.FAILED || status === TransactionStatus.REFUNDED) return "rechazado";
   return null;
 }
 

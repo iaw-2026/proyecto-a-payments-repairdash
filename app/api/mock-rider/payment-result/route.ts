@@ -14,7 +14,7 @@ export async function PUT(request: Request) {
     typeof payload !== "object" ||
     (typeof payload.id_viaje !== "string" && typeof payload.id_viaje !== "number") ||
     String(payload.id_viaje).trim().length === 0 ||
-    (payload.estado !== "aceptado" && payload.estado !== "cancelado")
+    (payload.estado !== "aceptado" && payload.estado !== "rechazado")
   ) {
     return NextResponse.json({ message: "Estado no valido" }, { status: 400 });
   }
@@ -26,7 +26,7 @@ export async function PUT(request: Request) {
     payload,
   });
 
-  const message = payload.estado === "aceptado" ? "Viaje aceptado" : "Viaje cancelado";
+  const message = payload.estado === "aceptado" ? "Viaje aceptado" : "Viaje rechazado";
 
   return NextResponse.json({ message });
 }
