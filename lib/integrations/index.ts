@@ -1,2 +1,2 @@
-// Integration modules index
-export * from "./mercado-pago";
+export * from "./mercadopago";
+export * from "./rider-callback";

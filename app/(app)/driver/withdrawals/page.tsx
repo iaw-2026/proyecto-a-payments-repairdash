@@ -2,6 +2,10 @@ import Link from "next/link";
 import { getWithdrawals } from "@/lib/services/withdrawals";
 import { WithdrawalTable } from "@/components/driver/WithdrawalTable";
 import { PaginationControls } from "@/components/ui/PaginationControls";
+import {
+  parsePageSearchParam,
+  redirectToCanonicalPage,
+} from "@/lib/pagination";
 
 export const dynamic = "force-dynamic";
 
@@ -14,9 +18,16 @@ export default async function DriverWithdrawalsPage({
 }) {
   const resolvedParams = await searchParams;
   const rawPage = resolvedParams.page;
-  const page = Math.max(1, Number(rawPage) || 1);
+  const page = parsePageSearchParam(rawPage);
 
   const { items, totalPages, currentPage } = await getWithdrawals(page, 10);
+
+  redirectToCanonicalPage({
+    pathname: "/driver/withdrawals",
+    searchParams: resolvedParams,
+    requestedPageValue: rawPage,
+    currentPage,
+  });
 
   return (
     <div className="max-w-4xl space-y-6 animate-fade-in">
@@ -63,7 +74,7 @@ export default async function DriverWithdrawalsPage({
 
             <Link
               href="/driver"
-              className="mt-8 inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-accent-hover hover:shadow-lg hover:shadow-accent-glow"
+              className="mt-8 inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover hover:shadow-lg hover:shadow-accent-glow"
             >
               <svg
                 className="h-4 w-4"

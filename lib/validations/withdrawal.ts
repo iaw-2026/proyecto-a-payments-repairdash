@@ -1,31 +1,35 @@
-/**
- * Validation schemas for withdrawal operations
- * TODO: Implement with Zod in Week 2
- */
+import { Prisma } from "@/generated/prisma/client";
+import { z } from "zod";
 
-export interface WithdrawalInput {
-  trabajadorId: string;
-  amount: string;
-}
+export const withdrawalAmountSchema = z
+  .string()
+  .trim()
+  .transform((value) => value.replace(",", "."))
+  .refine(
+    (value) => /^\d+(\.\d{1,2})?$/.test(value),
+    "El monto debe tener hasta dos decimales.",
+  )
+  .refine(
+    (value) => new Prisma.Decimal(value).greaterThan(0),
+    "El monto debe ser mayor a cero.",
+  );
+
+export const withdrawalSchema = z.object({
+  trabajadorId: z.string().trim().min(1, "trabajadorId es requerido."),
+  amount: withdrawalAmountSchema,
+});
+
+export const authenticatedWithdrawalSchema = z.object({
+  amount: withdrawalAmountSchema,
+});
+
+export type WithdrawalInput = z.infer<typeof withdrawalSchema>;
+export type AuthenticatedWithdrawalInput = z.infer<typeof authenticatedWithdrawalSchema>;
 
 export function validateWithdrawal(data: unknown): WithdrawalInput {
-  // TODO: Replace with Zod schema validation
-  if (!data || typeof data !== "object") {
-    throw new Error("Invalid withdrawal data");
-  }
+  return withdrawalSchema.parse(data);
+}
 
-  const withdrawal = data as Record<string, unknown>;
-
-  if (!withdrawal.trabajadorId || typeof withdrawal.trabajadorId !== "string") {
-    throw new Error("Invalid trabajadorId");
-  }
-
-  if (!withdrawal.amount || typeof withdrawal.amount !== "string") {
-    throw new Error("Invalid amount");
-  }
-
-  return {
-    trabajadorId: withdrawal.trabajadorId,
-    amount: withdrawal.amount,
-  };
+export function validateAuthenticatedWithdrawal(data: unknown): AuthenticatedWithdrawalInput {
+  return authenticatedWithdrawalSchema.parse(data);
 }

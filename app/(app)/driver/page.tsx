@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getUserWithBalance } from "@/lib/services/users";
+import { getCurrentDriverWithBalance } from "@/lib/services/users";
 import { BalanceCards } from "@/components/driver/BalanceCards";
 import { IncomeChart } from "@/components/driver/IncomeChart";
 import { QuickWithdrawalAction } from "@/components/driver/QuickWithdrawalAction";
@@ -9,16 +9,19 @@ import {
   IncomeChartSkeleton,
   QuickWithdrawalActionSkeleton,
 } from "@/components/driver/DriverDashboardSkeletons";
-import { MOCK_EARNED_THIS_MONTH, MOCK_INCOME_CHART } from "@/lib/mocks/driver-mocks";
+import {
+  getDriverEarnedThisMonth,
+  getDriverIncomeChart,
+} from "@/lib/services/liquidations";
 
 export const dynamic = "force-dynamic";
 
-type DriverUserPromise = ReturnType<typeof getUserWithBalance>;
+type DriverUserPromise = ReturnType<typeof getCurrentDriverWithBalance>;
 
 export default function DriverDashboardPage() {
   // Disparamos la query una sola vez y compartimos la misma promesa entre secciones.
   // Como no usamos await acá, la página puede renderizar los skeletons enseguida.
-  const userPromise = getUserWithBalance("driver");
+  const userPromise = getCurrentDriverWithBalance();
 
   return (
     <div className="max-w-5xl space-y-8 animate-fade-in">
@@ -33,7 +36,7 @@ export default function DriverDashboardPage() {
       </Suspense>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_0.4fr]">
-        {/* Gráfico: hoy usa mocks, pero queda aislado para una futura query async. */}
+        {/* Gráfico: consulta ingresos agregados por día en DB. */}
         <Suspense fallback={<IncomeChartSkeleton />}>
           <DriverIncomeSection />
         </Suspense>
@@ -81,17 +84,20 @@ async function DriverBalanceSection({
     return <DriverSeedEmptyState />;
   }
 
+  const earnedThisMonth = await getDriverEarnedThisMonth();
+
   return (
     <BalanceCards
       balance={user.trabajador.balance}
-      earnedThisMonth={MOCK_EARNED_THIS_MONTH} // TODO: Dato calculado mediante agregación
+      earnedThisMonth={earnedThisMonth} // TODO: Dato calculado mediante agregación
     />
   );
 }
 
 async function DriverIncomeSection() {
-  // No espera DB por ahora, pero sigue bajo Suspense para mantener el patrón por componente.
-  return <IncomeChart data={MOCK_INCOME_CHART} />;
+  const data = await getDriverIncomeChart();
+
+  return <IncomeChart data={data} />;
 }
 
 async function DriverWithdrawalSection({

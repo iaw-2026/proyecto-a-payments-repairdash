@@ -1,112 +1,139 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getUserRole } from "@/lib/auth";
+import type { Metadata } from "next";
 
-export default async function Home() {
-  const role = await getUserRole();
+export const metadata: Metadata = {
+  title: "Acceso | Repairdash Payments",
+  description:
+    "Accedé al sistema de pagos, balances, liquidaciones y retiros de Repairdash.",
+  openGraph: {
+    title: "Acceso | Repairdash Payments",
+    description:
+      "Accedé al sistema de pagos, balances, liquidaciones y retiros de Repairdash.",
+    type: "website",
+    locale: "es_AR",
+    siteName: "Repairdash Payments",
+  },
+};
 
-  if (role) {
-    redirect("/dashboard");
-  }
-
+export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Header */}
-      <header className="flex items-center justify-between px-8 py-5">
-        <span className="text-sm font-semibold tracking-[0.2em] uppercase text-foreground">
-          Repairdash
-        </span>
-        <div className="flex gap-2">
-          <Link
-            href="/rider"
-            className="px-4 py-2 rounded-md text-sm font-medium text-muted transition-all hover:text-foreground hover:bg-white/5"
-          >
-            Rider
+    <main className="min-h-screen px-6 py-8">
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-6xl flex-col">
+        <header className="flex items-center justify-between border-b border-border/80 pb-5">
+          <Link href="/" className="text-base font-bold text-foreground">
+            Repairdash Payments
           </Link>
-          <Link
-            href="/driver"
-            className="px-4 py-2 rounded-md text-sm font-medium text-muted transition-all hover:text-foreground hover:bg-white/5"
-          >
-            Driver
-          </Link>
-        </div>
-      </header>
+        </header>
 
-      {/* Hero */}
-      <main className="flex-1 flex items-center justify-center px-6 py-20">
-        <div className="max-w-5xl w-full grid gap-10 lg:grid-cols-[1.3fr_0.7fr] items-center">
-          {/* Left — CTA */}
-          <div className="animate-slide-up">
-            <span className="inline-flex rounded-md border border-accent/20 bg-accent-subtle px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.25em] text-accent mb-6">
-              Payments Platform
-            </span>
-
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.1] tracking-tight text-foreground">
-              Pagos simples
-              <br />
-              <span className="text-accent">para reparaciones.</span>
+        <section className="grid flex-1 items-center gap-10 py-12 lg:grid-cols-[1fr_440px]">
+          <div className="max-w-2xl">
+            <p className="text-sm font-semibold text-accent">
+              Acceso seguro para el equipo
+            </p>
+            <h1 className="mt-5 text-4xl font-bold leading-tight text-foreground">
+              Gestioná pagos, balances y retiros desde un solo lugar.
             </h1>
-
-            <p className="mt-6 max-w-lg text-lg leading-relaxed text-secondary">
-              Gestioná cobros, wallet y retiros desde una sola plataforma. Vista
-              cliente y vista trabajador integradas.
+            <p className="mt-5 max-w-xl text-base leading-7 text-secondary">
+              Entrá a Repairdash Payments para consultar cobros, revisar
+              liquidaciones y administrar solicitudes con la misma cuenta del
+              sistema.
             </p>
 
-            <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
-                href="/rider"
-                className="inline-flex items-center justify-center rounded-md bg-accent px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-accent-hover hover:shadow-[0_0_20px_rgba(245,0,241,0.25)]"
+                href="/sign-in"
+                className="inline-flex items-center justify-center rounded-md bg-accent px-6 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover hover:shadow-[0_0_20px_rgba(245,0,241,0.25)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-hover"
               >
-                Entrar como Rider
+                Iniciar sesión
               </Link>
-              <Link
-                href="/driver"
-                className="inline-flex items-center justify-center rounded-md border border-border px-6 py-3 text-sm font-semibold text-foreground transition-all hover:border-accent/40 hover:bg-white/5"
-              >
-                Entrar como Driver
-              </Link>
+              <p className="flex items-center text-sm leading-6 text-muted">
+                Acceso exclusivo para usuarios habilitados.
+              </p>
             </div>
           </div>
 
-          {/* Right — Feature cards */}
-          <div className="grid gap-4 animate-fade-in">
-            <article className="rounded-xl border border-border bg-surface/70 p-6 backdrop-blur transition-all hover:border-muted/50 hover:bg-surface">
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-muted">
-                Cliente
-              </p>
-              <h2 className="mt-3 text-xl font-semibold text-foreground">
-                Crear y consultar pagos
-              </h2>
-              <p className="mt-2 text-sm leading-relaxed text-secondary">
-                Iniciá un pago, consultá el estado y revisá tu historial.
-              </p>
-            </article>
+          <aside
+            aria-label="Vista previa de Repairdash Payments"
+            className="rounded-lg border border-border bg-surface/70 p-5 shadow-2xl shadow-black/20 backdrop-blur-xl"
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-border pb-4">
+              <div>
+                <p className="text-sm font-semibold text-foreground">
+                  Acceso por perfil
+                </p>
+                <p className="mt-1 text-xs text-muted">
+                  Cada rol ve herramientas distintas
+                </p>
+              </div>
+              <span className="rounded-md bg-accent-subtle px-3 py-1 text-xs font-semibold text-foreground">
+                Autenticación
+              </span>
+            </div>
 
-            <article className="rounded-xl border border-border bg-surface/70 p-6 backdrop-blur transition-all hover:border-muted/50 hover:bg-surface">
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-muted">
-                Trabajador
-              </p>
-              <h2 className="mt-3 text-xl font-semibold text-foreground">
-                Wallet y retiros
-              </h2>
-              <p className="mt-2 text-sm leading-relaxed text-secondary">
-                Saldo disponible, saldo bloqueado y retiro con persistencia
-                local.
-              </p>
-            </article>
+            <div className="space-y-4 pt-5">
+              <div className="rounded-md border border-border/80 bg-background/25 p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-foreground">
+                      Rider
+                    </p>
+                    <p className="mt-2 text-sm font-semibold text-foreground">
+                      Pagos y seguimiento de trabajos
+                    </p>
+                  </div>
+                  <span className="rounded-md bg-success/15 px-3 py-1 text-xs font-semibold text-success">
+                    Cliente
+                  </span>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <div className="rounded-md border border-border/70 bg-surface/50 p-3">
+                    <p className="text-xs text-muted">Checkout</p>
+                    <p className="mt-1 text-sm font-semibold text-foreground">
+                      Pago seguro
+                    </p>
+                  </div>
+                  <div className="rounded-md border border-border/70 bg-surface/50 p-3">
+                    <p className="text-xs text-muted">Historial</p>
+                    <p className="mt-1 text-sm font-semibold text-foreground">
+                      Estados claros
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-            <article className="rounded-xl border border-border bg-gradient-to-br from-accent/8 to-surface p-6 backdrop-blur transition-all hover:from-accent/12">
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-muted">
-                Stack
-              </p>
-              <p className="mt-3 text-sm leading-relaxed text-secondary">
-                Next.js App Router, Prisma 7 y PostgreSQL — listo para Clerk y
-                Mercado Pago.
-              </p>
-            </article>
-          </div>
-        </div>
-      </main>
-    </div>
+              <div className="rounded-md border border-border/80 bg-background/25 p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-warning">
+                      Driver
+                    </p>
+                    <p className="mt-2 text-sm font-semibold text-foreground">
+                      Balances, liquidaciones y retiros
+                    </p>
+                  </div>
+                  <span className="rounded-md bg-warning/15 px-3 py-1 text-xs font-semibold text-warning">
+                    Trabajador
+                  </span>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <div className="rounded-md border border-border/70 bg-surface/50 p-3">
+                    <p className="text-xs text-muted">Balance</p>
+                    <p className="mt-1 text-sm font-semibold text-foreground">
+                      Disponible
+                    </p>
+                  </div>
+                  <div className="rounded-md border border-border/70 bg-surface/50 p-3">
+                    <p className="text-xs text-muted">Retiros</p>
+                    <p className="mt-1 text-sm font-semibold text-foreground">
+                      Solicitudes
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </section>
+      </div>
+    </main>
   );
 }

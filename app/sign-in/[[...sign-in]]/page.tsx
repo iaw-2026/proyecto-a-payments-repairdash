@@ -1,16 +1,96 @@
-import Link from "next/link";
+import { SignIn } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
+import { SignOutRetryButton } from "@/components/auth/SignOutRetryButton";
+import type { Metadata } from "next";
+import { headers } from "next/headers";
 
-export default function SignInPage() {
-  return (
-    <div className="mx-auto max-w-3xl px-6 py-16 text-slate-100">
-      <div className="rounded-[2rem] border border-white/10 bg-slate-950/70 p-8 backdrop-blur-xl">
-        <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Clerk</p>
-        <h1 className="mt-3 text-3xl font-semibold text-white">Sign in</h1>
-        <p className="mt-3 text-slate-300">Este punto de entrada quedara conectado a Clerk en la siguiente etapa.</p>
-        <Link href="/" className="mt-6 inline-flex rounded-full bg-cyan-300 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200">
-          Volver al inicio
-        </Link>
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
+
+type SignInPageProps = {
+  searchParams: Promise<{
+    redirect_url?: string | string[];
+  }>;
+};
+
+function firstSearchValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function getSafeRedirectUrl(value: string | undefined, requestHost: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const parsedUrl = new URL(value, "http://localhost");
+    const isRelativeUrl = parsedUrl.origin === "http://localhost";
+    const isSameHostUrl =
+      requestHost !== null &&
+      parsedUrl.host.toLowerCase() === requestHost.toLowerCase();
+
+    if (!isRelativeUrl && !isSameHostUrl) {
+      return null;
+    }
+
+    return `${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`;
+  } catch {
+    return null;
+  }
+}
+
+export default async function SignInPage({ searchParams }: SignInPageProps) {
+  const { userId } = await auth();
+  const requestHeaders = await headers();
+  const { redirect_url: rawRedirectUrl } = await searchParams;
+  const redirectUrl = getSafeRedirectUrl(
+    firstSearchValue(rawRedirectUrl),
+    requestHeaders.get("host"),
+  );
+  const signInUrl = redirectUrl
+    ? `/sign-in?redirect_url=${encodeURIComponent(redirectUrl)}`
+    : "/sign-in";
+
+  if (userId) {
+    return (
+      <div className="flex min-h-screen items-center justify-center px-6 py-16">
+        <div className="w-full max-w-md rounded-lg border border-border bg-surface/70 p-6 text-center">
+          <h1 className="text-xl font-semibold text-foreground">
+            Ya hay una sesión activa
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-secondary">
+            Cerrá la sesión actual para volver a intentar el inicio de sesión
+            con otra cuenta.
+          </p>
+          <div className="mt-6">
+            <SignOutRetryButton redirectUrl={signInUrl} />
+          </div>
+        </div>
       </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center px-6 py-16">
+      <SignIn
+        path="/sign-in"
+        routing="path"
+        appearance={{
+          elements: {
+            footerAction: {
+              display: "none",
+            },
+          },
+        }}
+        forceRedirectUrl={redirectUrl}
+        fallbackRedirectUrl="/dashboard"
+        transferable={false}
+        withSignUp={false}
+      />
     </div>
   );
 }

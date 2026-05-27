@@ -17,9 +17,9 @@ export function QuickWithdrawalAction({ balanceAvailable }: QuickWithdrawalActio
           <p className="text-sm font-medium text-muted uppercase tracking-wider">
             Acción rápida
           </p>
-          <h3 className="mt-2 text-xl font-bold text-foreground">
+          <h2 className="mt-2 text-xl font-bold text-foreground">
             Solicitar retiro
-          </h3>
+          </h2>
           <p className="mt-3 text-sm leading-relaxed text-secondary">
             Retirá fondos de tu saldo disponible a tu cuenta bancaria registrada.
           </p>
@@ -27,7 +27,7 @@ export function QuickWithdrawalAction({ balanceAvailable }: QuickWithdrawalActio
 
         <button
           onClick={() => setIsModalOpen(true)}
-          className="mt-6 inline-flex items-center justify-center rounded-md bg-accent px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-accent-hover hover:shadow-[0_0_20px_rgba(245,0,241,0.25)]"
+          className="mt-6 inline-flex items-center justify-center rounded-md bg-accent px-6 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover hover:shadow-[0_0_20px_rgba(245,0,241,0.25)]"
         >
           Iniciar Retiro
           <svg

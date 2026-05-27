@@ -4,20 +4,22 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import type { TransactionStatus } from "@/generated/prisma/client";
+import { Prisma, type TransactionStatus } from "@/generated/prisma/client";
 import { randomUUID } from "crypto";
 
 export async function createTransaction(
   clientId: string,
   trabajadorId: string,
-  amount: string
+  amount: string,
+  trabajoId: string = `manual:${randomUUID()}`,
 ) {
   const transaction = await prisma.transaction.create({
     data: {
       id: randomUUID(),
+      trabajoId,
       clientId,
       trabajadorId,
-      amount: parseFloat(amount),
+      amount: new Prisma.Decimal(amount),
       status: "PENDING" as TransactionStatus,
     },
   });

@@ -12,6 +12,7 @@ const prisma = new PrismaClient({
 });
 
 async function main() {
+  await prisma.commissionSettings.deleteMany();
   await prisma.withdrawal.deleteMany();
   await prisma.transaction.deleteMany();
   await prisma.balance.deleteMany();
@@ -72,10 +73,30 @@ async function main() {
     },
   });
 
+  await prisma.user.create({
+    data: {
+      clerkId: "user_admin_payments_1",
+      email: "admin-payments@example.com",
+      fullName: "Admin Payments Demo",
+      role: "adminPayments",
+    },
+  });
+
+  await prisma.commissionSettings.create({
+    data: {
+      id: "platform",
+      commissionRate: new Prisma.Decimal("10.00"),
+    },
+  });
+
+  const liquidatedAt = new Date();
+  const reservedAt = new Date(liquidatedAt.getTime() - 60_000);
+
   await prisma.transaction.createMany({
     data: [
       {
         id: "txn_pending_1",
+        trabajoId: "job_demo_pending_1",
         amount: new Prisma.Decimal("18000.00"),
         status: TransactionStatus.PENDING,
         clientId: rider.clerkId,
@@ -84,19 +105,27 @@ async function main() {
       },
       {
         id: "txn_reserved_1",
+        trabajoId: "job_demo_reserved_1",
         amount: new Prisma.Decimal("12000.00"),
         status: TransactionStatus.RESERVED,
         clientId: rider.clerkId,
         trabajadorId: driverOne.clerkId,
         gatewayPaymentId: "mp_demo_001",
+        reservedAt,
       },
       {
         id: "txn_liquidated_1",
+        trabajoId: "job_demo_liquidated_1",
         amount: new Prisma.Decimal("9500.00"),
         status: TransactionStatus.LIQUIDATED,
         clientId: rider.clerkId,
         trabajadorId: driverTwo.clerkId,
         gatewayPaymentId: "mp_demo_002",
+        reservedAt,
+        liquidatedAt,
+        commissionRate: new Prisma.Decimal("10.00"),
+        commissionAmount: new Prisma.Decimal("950.00"),
+        netAmount: new Prisma.Decimal("8550.00"),
       },
     ],
   });

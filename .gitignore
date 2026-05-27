@@ -40,6 +40,7 @@ build/Release
 
 # Dependency directories
 node_modules/
+.pnpm-store/
 jspm_packages/
 
 # Snowpack dependency directory (https://snowpack.dev/)
@@ -139,3 +140,9 @@ dist
 generated/prisma
 .vercel
 .env*.local
+
+.vercel
+.env*.local
+
+# clerk configuration (can include secrets)
+/.clerk/

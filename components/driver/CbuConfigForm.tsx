@@ -84,12 +84,12 @@ export function CbuConfigForm({ initialCbuCvu }: CbuConfigFormProps) {
       <button
         type="submit"
         disabled={isPending || cbuCvu.length !== 22 || (isEditing && cbuCvu === initialCbuCvu)}
-        className="inline-flex w-full items-center justify-center rounded-lg bg-accent px-5 py-3 text-sm font-semibold text-white transition-all hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+        className="inline-flex w-full items-center justify-center rounded-lg bg-accent px-5 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
       >
         {isPending ? (
           <>
             <svg
-              className="mr-2 h-4 w-4 animate-spin text-white"
+              className="mr-2 h-4 w-4 animate-spin text-accent-foreground"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"

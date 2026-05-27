@@ -1,6 +1,6 @@
 {
   "name": "payments-app",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -13,15 +13,18 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.3.3",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "mercadopago": "^2.12.0",
     "next": "16.2.4",
     "pg": "^8.20.0",
     "prisma": "^7.8.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-hot-toast": "^2.6.0",
-    "recharts": "^3.8.1"
+    "recharts": "^3.8.1",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -33,5 +36,6 @@
     "tailwindcss": "^4",
     "tsx": "^4.20.5",
     "typescript": "^5"
-  }
+  },
+  "packageManager": "pnpm@11.1.1+sha512.d1fdf5f73c617b64fa1a56a81c3c8dfe0e966e33a6010aa256b517ae77be21d93e05affc0de1a83b0e4f29d569f68b446ae8f068cd7247c0bb3df0fb4d7bdf9a"
 }

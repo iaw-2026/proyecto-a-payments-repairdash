@@ -10,5 +10,7 @@ export interface IncomeDataPoint {
   /** Label del eje X, e.g. "Lun", "Mar" */
   day: string;
   /** Monto total ingresado ese día */
-  amount: number;
+  amount: string; // TODO: Dato calculado mediante agregación
+  /** Valor derivado solo para renderizar el grÃ¡fico en Recharts */
+  chartAmount: number;
 }
