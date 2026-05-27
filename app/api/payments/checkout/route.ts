@@ -3,11 +3,11 @@ import { CheckoutError, createCheckout } from "@/lib/services/checkout";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
-function getBaseUrl(request: Request) {
+function getConfiguredBaseUrl() {
   const configuredUrl = process.env.APP_URL?.trim();
 
   if (!configuredUrl) {
-    return new URL(request.url).origin;
+    return null;
   }
 
   const absoluteUrl = /^https?:\/\//i.test(configuredUrl)
@@ -15,6 +15,34 @@ function getBaseUrl(request: Request) {
     : `https://${configuredUrl}`;
 
   return new URL(absoluteUrl).origin;
+}
+
+function isLocalOrigin(origin: string) {
+  const { hostname } = new URL(origin);
+
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]";
+}
+
+function getRequestOrigin(request: Request) {
+  const requestUrl = new URL(request.url);
+  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+  const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+
+  if (forwardedHost) {
+    return new URL(`${forwardedProto ?? requestUrl.protocol.replace(":", "")}://${forwardedHost}`).origin;
+  }
+
+  return requestUrl.origin;
+}
+
+export function getBaseUrl(request: Request) {
+  const requestOrigin = getRequestOrigin(request);
+
+  if (!isLocalOrigin(requestOrigin)) {
+    return requestOrigin;
+  }
+
+  return getConfiguredBaseUrl() ?? requestOrigin;
 }
 
 function buildRiderConfirmationUrl(baseUrl: string, transactionId: string) {

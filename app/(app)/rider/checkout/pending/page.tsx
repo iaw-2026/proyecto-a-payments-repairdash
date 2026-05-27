@@ -1,7 +1,7 @@
 import { CheckoutResultView } from "@/components/rider/CheckoutResultView";
 import {
-  firstCheckoutSearchValue,
   getRiderCheckoutResultData,
+  resolveCheckoutTransactionId,
   type CheckoutResultSearchParams,
 } from "@/lib/services/rider-checkout";
 
@@ -14,8 +14,7 @@ type RiderCheckoutPendingPageProps = {
 export default async function RiderCheckoutPendingPage({
   searchParams,
 }: RiderCheckoutPendingPageProps) {
-  const { transactionId: rawTransactionId } = await searchParams;
-  const transactionId = firstCheckoutSearchValue(rawTransactionId);
+  const transactionId = resolveCheckoutTransactionId(await searchParams);
   const data = transactionId ? await getRiderCheckoutResultData(transactionId) : null;
 
   return <CheckoutResultView kind="pending" data={data} />;
