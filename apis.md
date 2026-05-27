@@ -246,7 +246,7 @@ x-api-key: <REPAIRDASH_API_KEY>
 ```json
 {
   "id_viaje": "trabajo_test_202605121",
-  "estado": "cancelado"
+  "estado": "rechazado"
 }
 ```
 
@@ -324,7 +324,7 @@ Payments intenta enviar el callback hasta 3 veces si Rider App responde error o 
 ### Estados Posibles de `estado`
 
 - `aceptado`: pago acreditado.
-- `cancelado`: pago rechazado, cancelado o devuelto.
+- `rechazado`: pago rechazado, cancelado o devuelto.
 
 ## 4. Flujo Resumido
 
