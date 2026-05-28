@@ -5,7 +5,7 @@
 Payments usa Clerk solo para sesion web de usuarios en la app (`/sign-in`, `/rider`, `/driver`, `/dashboard`). Las llamadas server-to-server entre apps no usan JWT de Clerk: siguen usando `x-internal-api-key`.
 
 - Rider App -> Payments: `x-internal-api-key: <PAYMENTS_INTERNAL_API_KEY>`.
-- Payments -> Rider App callback: `x-api-key: <REPAIRDASH_API_KEY>`.
+- Payments -> Rider App callback: `x-internal-api-key: <RIDER_CALLBACK_API_KEY>`.
 - Clerk -> Payments webhook: firma verificada con `CLERK_WEBHOOK_SIGNING_SECRET`.
 - Mercado Pago -> Payments webhook: notificacion publica de Mercado Pago, luego Payments consulta el pago real en Mercado Pago.
 
@@ -292,7 +292,7 @@ Cuando el request no llega como `application/json`.
 
 **Endpoint:** definido por Rider App y configurado en Payments como `RIDER_PAYMENT_CALLBACK_URL`.
 
-**Ejemplo:** `PUT https://rider-app/api/repairdash/statepayment`
+**Ejemplo:** `POST https://rider-app/api/payments/result`
 
 **App origen:** Payments App  
 **App destino:** Rider App  
@@ -306,15 +306,18 @@ Rider App debe procesar este callback de forma idempotente, porque Mercado Pago 
 
 ```http
 content-type: application/json
-x-api-key: <REPAIRDASH_API_KEY>
+x-internal-api-key: <RIDER_CALLBACK_API_KEY>
 ```
 
 ### Payload Aprobado
 
 ```json
 {
-  "id_viaje": "trabajo_test_202605121",
-  "estado": "aceptado"
+  "transactionId": "txn_123",
+  "trabajoId": "trabajo_123",
+  "paymentStatus": "APPROVED",
+  "reason": "accredited",
+  "paidAt": "2026-05-10T04:19:28.000Z"
 }
 ```
 
@@ -322,8 +325,23 @@ x-api-key: <REPAIRDASH_API_KEY>
 
 ```json
 {
-  "id_viaje": "trabajo_test_202605121",
-  "estado": "rechazado"
+  "transactionId": "txn_123",
+  "trabajoId": "trabajo_123",
+  "paymentStatus": "REJECTED",
+  "reason": "cc_rejected_other_reason",
+  "paidAt": null
+}
+```
+
+### Payload Pendiente
+
+```json
+{
+  "transactionId": "txn_123",
+  "trabajoId": "trabajo_123",
+  "paymentStatus": "PENDING",
+  "reason": "waiting_payment_confirmation",
+  "paidAt": null
 }
 ```
 
@@ -331,7 +349,7 @@ x-api-key: <REPAIRDASH_API_KEY>
 
 ```json
 {
-  "message": "Viaje aceptado"
+  "ok": true
 }
 ```
 
@@ -344,6 +362,19 @@ RIDER_PAYMENT_CALLBACK_URL="http://localhost:3000/api/mock-rider/payment-result"
 ```
 
 Ese endpoint esta en `app/api/mock-rider/payment-result/route.ts`. Debe borrarse cuando Rider App exponga su callback real.
+
+
+
+### Reintentos
+
+Payments intenta enviar el callback hasta 3 veces si Rider App responde error o no responde.
+
+### Estados Posibles de `paymentStatus`
+
+- `PENDING`: pago pendiente o en proceso.
+- `APPROVED`: pago acreditado.
+- `REJECTED`: pago rechazado o cancelado.
+- `REFUNDED`: pago devuelto.
 
 ## 4. Consultar Wallet de Trabajador
 
@@ -394,15 +425,6 @@ Cuando falta o es invalida la API key interna.
 
 Cuando el trabajador no tiene wallet/balance en Payments.
 
-### Reintentos
-
-Payments intenta enviar el callback hasta 3 veces si Rider App responde error o no responde.
-
-### Estados Posibles de `estado`
-
-- `aceptado`: pago acreditado.
-- `rechazado`: pago rechazado, cancelado o devuelto.
-
 ## 5. Flujo Resumido
 
 1. Rider App llama `POST /api/payments/checkout`.
@@ -414,4 +436,4 @@ Payments intenta enviar el callback hasta 3 veces si Rider App responde error o 
 7. Mercado Pago redirige al usuario a una pantalla de Payments.
 8. Mercado Pago llama el webhook de Payments.
 9. Payments actualiza `Transaction` y `Balance`.
-10. Payments envia el callback a Rider App con `estado`.
+10. Payments envia el callback a Rider App con `paymentStatus`.
