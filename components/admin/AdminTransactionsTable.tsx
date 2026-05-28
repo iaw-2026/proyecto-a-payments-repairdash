@@ -73,9 +73,6 @@ export function AdminTransactionsTable({
               <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted">
                 ID
               </th>
-              <th className="px-5 py-3.5 text-right text-xs font-semibold uppercase tracking-wider text-muted">
-                Acciones
-              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/50">
@@ -101,13 +98,8 @@ export function AdminTransactionsTable({
                 </td>
                 <td className="px-5 py-4">
                   <AdminStatusBadge status={transaction.status} />
-                </td>
-                <td className="whitespace-nowrap px-5 py-4 font-mono text-xs text-muted">
-                  {shortId(transaction.id)}
-                </td>
-                <td className="whitespace-nowrap px-5 py-4 text-right">
                   {transaction.status === TransactionStatus.RESERVED ? (
-                    <form action={liquidateAdminTransaction}>
+                    <form action={liquidateAdminTransaction} className="mt-2">
                       <input type="hidden" name="transactionId" value={transaction.id} />
                       <button
                         type="submit"
@@ -117,6 +109,9 @@ export function AdminTransactionsTable({
                       </button>
                     </form>
                   ) : null}
+                </td>
+                <td className="whitespace-nowrap px-5 py-4 font-mono text-xs text-muted">
+                  {shortId(transaction.id)}
                 </td>
               </tr>
             ))}
