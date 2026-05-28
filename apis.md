@@ -211,7 +211,84 @@ Cuando Mercado Pago no devuelve una preference o una URL de checkout valida.
 }
 ```
 
-## 2. Callback de Resultado Hacia Rider App
+## 2. Cancelar Checkout
+
+**Endpoint:** `PUT /api/payments/checkout/cancel`
+
+**App origen:** Rider App  
+**App destino:** Payments App  
+**Objetivo:** avisar que el rider no va a pagar un trabajo.
+
+Rider App debe llamar este endpoint despues de haber llamado `POST /api/payments/checkout` para el mismo `trabajoId`. Payments solo cancela si la transaccion sigue `PENDING`; si ya se pago, no toca saldos ni estados contables.
+
+### Headers
+
+```http
+content-type: application/json
+x-internal-api-key: <PAYMENTS_INTERNAL_API_KEY>
+```
+
+Usa la misma API key interna que `POST /api/payments/checkout`.
+
+### Body
+
+```json
+{
+  "trabajoId": "trabajo_123"
+}
+```
+
+### Respuesta Exitosa
+
+Status HTTP: `200 OK` cuando la API key y el payload son validos.
+
+```json
+{
+  "success": true,
+  "trabajoId": "trabajo_123",
+  "outcome": "cancelled"
+}
+```
+
+### Outcomes
+
+- `cancelled`: existia una transaccion `PENDING` y paso a `FAILED`.
+- `not_found`: no existia una transaccion para ese `trabajoId`.
+- `already_paid`: la transaccion ya estaba `RESERVED`, `LIQUIDATED` o `TRANSFERRED`.
+- `already_failed`: la transaccion ya estaba `FAILED`.
+- `not_cancellable`: la transaccion estaba `DISPUTED` o `REFUNDED`.
+
+### Errores Posibles
+
+#### 400 Bad Request
+
+Cuando el body no cumple el contrato esperado.
+
+```json
+{
+  "success": false,
+  "errorCode": "INVALID_CANCEL_CHECKOUT_PAYLOAD",
+  "message": "Datos de cancelacion invalidos."
+}
+```
+
+#### 401 Unauthorized
+
+Cuando falta o es invalida la API key interna.
+
+#### 415 Unsupported Media Type
+
+Cuando el request no llega como `application/json`.
+
+```json
+{
+  "success": false,
+  "errorCode": "UNSUPPORTED_CONTENT_TYPE",
+  "message": "La cancelacion de checkout solo acepta application/json."
+}
+```
+
+## 3. Callback de Resultado Hacia Rider App
 
 **Endpoint:** definido por Rider App y configurado en Payments como `RIDER_PAYMENT_CALLBACK_URL`.
 
@@ -268,7 +345,7 @@ RIDER_PAYMENT_CALLBACK_URL="http://localhost:3000/api/mock-rider/payment-result"
 
 Ese endpoint esta en `app/api/mock-rider/payment-result/route.ts`. Debe borrarse cuando Rider App exponga su callback real.
 
-## 3. Consultar Wallet de Trabajador
+## 4. Consultar Wallet de Trabajador
 
 **Endpoint:** `GET /api/payments/wallet/:trabajadorId`
 
@@ -326,7 +403,7 @@ Payments intenta enviar el callback hasta 3 veces si Rider App responde error o 
 - `aceptado`: pago acreditado.
 - `rechazado`: pago rechazado, cancelado o devuelto.
 
-## 4. Flujo Resumido
+## 5. Flujo Resumido
 
 1. Rider App llama `POST /api/payments/checkout`.
 2. Payments crea la transaccion y la preference de Mercado Pago.
