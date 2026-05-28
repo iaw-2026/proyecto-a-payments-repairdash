@@ -11,11 +11,20 @@ export const checkoutSchema = z.object({
   clientId: z.string().trim().min(1, "clientId es requerido."),
   trabajadorId: z.string().trim().min(1, "trabajadorId es requerido."),
   amount: decimalAmountSchema,
-  description: z.string().trim().min(1).max(180).default("Servicio de reparación"),
+  description: z.string().trim().min(1).max(180).default("Servicio de reparacion"),
+});
+
+export const cancelCheckoutSchema = z.object({
+  trabajoId: z.string().trim().min(1, "trabajoId es requerido."),
 });
 
 export type CheckoutInput = z.infer<typeof checkoutSchema>;
+export type CancelCheckoutInput = z.infer<typeof cancelCheckoutSchema>;
 
 export function validateCheckout(data: unknown): CheckoutInput {
   return checkoutSchema.parse(data);
+}
+
+export function validateCancelCheckout(data: unknown): CancelCheckoutInput {
+  return cancelCheckoutSchema.parse(data);
 }

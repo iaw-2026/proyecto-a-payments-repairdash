@@ -4,6 +4,10 @@ import {
   getMercadoPagoPayment,
   updateMercadoPagoPreference,
 } from "@/lib/integrations/mercadopago";
+import {
+  getCheckoutCancellationOutcome,
+  type CheckoutCancellationOutcome,
+} from "@/lib/checkout-cancellation";
 import { sendRiderPaymentCallback } from "@/lib/integrations/rider-callback";
 import { prisma } from "@/lib/prisma";
 import {
@@ -12,7 +16,7 @@ import {
 } from "@/lib/services/liquidations";
 import type { RiderPaymentCallbackPayload, RiderPaymentEstado } from "@/lib/types/payment-callback";
 import type { CheckoutInput } from "@/lib/validations/checkout";
-import { validateCheckout } from "@/lib/validations/checkout";
+import { validateCancelCheckout, validateCheckout } from "@/lib/validations/checkout";
 import type { PaymentResponse } from "mercadopago/dist/clients/payment/commonTypes";
 
 export class CheckoutError extends Error {
@@ -31,6 +35,12 @@ export type CheckoutResult = {
   trabajoId: string;
   preferenceId: string;
   checkoutUrl: string;
+};
+
+export type CancelCheckoutResult = {
+  success: true;
+  trabajoId: string;
+  outcome: CheckoutCancellationOutcome;
 };
 
 function getCheckoutUrlFromPreference(preference: { init_point?: string; sandbox_init_point?: string }) {
@@ -183,6 +193,62 @@ export async function createCheckout(inputData: unknown, baseUrl: string): Promi
   };
 }
 
+export async function cancelCheckout(inputData: unknown): Promise<CancelCheckoutResult> {
+  const input = validateCancelCheckout(inputData);
+
+  const transaction = await prisma.transaction.findUnique({
+    where: { trabajoId: input.trabajoId },
+  });
+
+  if (!transaction) {
+    return {
+      success: true,
+      trabajoId: input.trabajoId,
+      outcome: "not_found",
+    };
+  }
+
+  const outcome = getCheckoutCancellationOutcome(transaction.status);
+
+  if (outcome !== "cancelled") {
+    return {
+      success: true,
+      trabajoId: transaction.trabajoId,
+      outcome,
+    };
+  }
+
+  const result = await prisma.transaction.updateMany({
+    where: {
+      id: transaction.id,
+      status: TransactionStatus.PENDING,
+    },
+    data: {
+      status: TransactionStatus.FAILED,
+    },
+  });
+
+  if (result.count === 1) {
+    return {
+      success: true,
+      trabajoId: transaction.trabajoId,
+      outcome: "cancelled",
+    };
+  }
+
+  const currentTransaction = await prisma.transaction.findUnique({
+    where: { id: transaction.id },
+  });
+
+  return {
+    success: true,
+    trabajoId: transaction.trabajoId,
+    outcome: currentTransaction
+      ? getCheckoutCancellationOutcome(currentTransaction.status)
+      : "not_found",
+  };
+}
+
 export function mapMercadoPagoStatusToTransactionStatus(status: string | undefined) {
   if (status === "approved") return TransactionStatus.RESERVED;
   if (status === "rejected" || status === "cancelled") return TransactionStatus.FAILED;
@@ -195,6 +261,10 @@ function resolveNextTransactionStatus(
   nextStatus: TransactionStatus,
   liquidatedAt: Date | null,
 ) {
+  if (currentStatus === TransactionStatus.FAILED) {
+    return TransactionStatus.FAILED;
+  }
+
   if (currentStatus === TransactionStatus.RESERVED && liquidatedAt && nextStatus === TransactionStatus.RESERVED) {
     return TransactionStatus.LIQUIDATED;
   }
