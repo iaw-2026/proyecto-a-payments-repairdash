@@ -2,13 +2,17 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Acceso | Repairdash Payments",
+  title: "Sistema de pagos para reparaciones",
   description:
-    "Accedé al sistema de pagos, balances, liquidaciones y retiros de Repairdash.",
+    "Repairdash Payments centraliza pagos, balances, liquidaciones y retiros para riders, drivers y administradores.",
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
-    title: "Acceso | Repairdash Payments",
+    title: "Repairdash Payments",
     description:
-      "Accedé al sistema de pagos, balances, liquidaciones y retiros de Repairdash.",
+      "Sistema seguro para gestionar pagos, balances, liquidaciones y retiros de reparaciones.",
+    url: "/",
     type: "website",
     locale: "es_AR",
     siteName: "Repairdash Payments",
@@ -31,10 +35,10 @@ export default function Home() {
               Acceso seguro para el equipo
             </p>
             <h1 className="mt-5 text-4xl font-bold leading-tight text-foreground">
-              Gestioná pagos, balances y retiros desde un solo lugar.
+              Gestiona pagos, balances y retiros desde un solo lugar.
             </h1>
             <p className="mt-5 max-w-xl text-base leading-7 text-secondary">
-              Entrá a Repairdash Payments para consultar cobros, revisar
+              Entra a Repairdash Payments para consultar cobros, revisar
               liquidaciones y administrar solicitudes con la misma cuenta del
               sistema.
             </p>
@@ -44,7 +48,7 @@ export default function Home() {
                 href="/sign-in"
                 className="inline-flex items-center justify-center rounded-md bg-accent px-6 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover hover:shadow-[0_0_20px_rgba(245,0,241,0.25)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-hover"
               >
-                Iniciar sesión
+                Iniciar sesion
               </Link>
               <p className="flex items-center text-sm leading-6 text-muted">
                 Acceso exclusivo para usuarios habilitados.
@@ -66,7 +70,7 @@ export default function Home() {
                 </p>
               </div>
               <span className="rounded-md bg-accent-subtle px-3 py-1 text-xs font-semibold text-foreground">
-                Autenticación
+                Autenticacion
               </span>
             </div>
 

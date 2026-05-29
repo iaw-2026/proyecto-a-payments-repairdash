@@ -3,9 +3,28 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { AppToaster } from "@/components/ui/AppToaster";
 import "./globals.css";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://payments.repairdash.com";
+
 export const metadata: Metadata = {
-  title: "Repairdash Payments",
-  description: "Sistema de pagos para reparaciones - vista rider y driver",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Repairdash Payments",
+    template: "%s | Repairdash Payments",
+  },
+  description:
+    "Sistema de pagos para reparaciones, liquidaciones y retiros.",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "Repairdash Payments",
+    description:
+      "Sistema seguro para gestionar pagos, balances, liquidaciones y retiros de reparaciones.",
+    url: "/",
+    siteName: "Repairdash Payments",
+    locale: "es_AR",
+    type: "website",
+  },
   robots: {
     index: true,
     follow: true,
