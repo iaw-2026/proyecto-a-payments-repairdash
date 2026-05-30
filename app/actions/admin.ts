@@ -14,6 +14,11 @@ export type AdminCommissionActionState = {
   message: string;
 };
 
+export type AdminActionResult = {
+  ok: boolean;
+  message: string;
+};
+
 function parseCommissionRate(formData: FormData) {
   const rawRate = formData.get("commissionRate");
 
@@ -91,44 +96,81 @@ export async function updateAdminCommissionRate(
   };
 }
 
-export async function approveAdminWithdrawal(formData: FormData) {
+export async function approveAdminWithdrawal(
+  formData: FormData,
+): Promise<AdminActionResult> {
   try {
     await getAuthUser("adminPayments");
   } catch {
-    return;
+    return {
+      ok: false,
+      message: "No tenes permisos para aprobar retiros.",
+    };
   }
 
   const withdrawalId = parseWithdrawalId(formData);
 
   if (!withdrawalId) {
-    return;
+    return {
+      ok: false,
+      message: "No se encontro el retiro a aprobar.",
+    };
   }
 
-  await approveRequestedWithdrawalByAdmin(withdrawalId);
+  const result = await approveRequestedWithdrawalByAdmin(withdrawalId);
+
+  if (result.count !== 1) {
+    return {
+      ok: false,
+      message: "El retiro ya no esta pendiente de aprobacion.",
+    };
+  }
+
   revalidatePath("/admin/withdrawals");
+
+  return {
+    ok: true,
+    message: "Retiro aprobado correctamente.",
+  };
 }
 
-export async function liquidateAdminTransaction(formData: FormData) {
+export async function liquidateAdminTransaction(
+  formData: FormData,
+): Promise<AdminActionResult> {
   try {
     await getAuthUser("adminPayments");
   } catch {
-    return;
+    return {
+      ok: false,
+      message: "No tenes permisos para liquidar transacciones.",
+    };
   }
 
   const transactionId = parseTransactionId(formData);
 
   if (!transactionId) {
-    return;
+    return {
+      ok: false,
+      message: "No se encontro la transaccion a liquidar.",
+    };
   }
 
   const result = await liquidateReservedTransaction(transactionId);
-  revalidatePath("/admin/transactions");
 
   if (!result) {
-    return;
+    return {
+      ok: false,
+      message: "La transaccion ya no esta reservada para liquidar.",
+    };
   }
 
+  revalidatePath("/admin/transactions");
   revalidatePath("/admin");
   revalidatePath("/driver");
   revalidatePath("/driver/liquidations");
+
+  return {
+    ok: true,
+    message: "Transaccion liquidada correctamente.",
+  };
 }

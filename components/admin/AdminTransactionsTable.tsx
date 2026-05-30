@@ -1,6 +1,6 @@
-import { liquidateAdminTransaction } from "@/app/actions/admin";
 import type { AdminTransactionItem } from "@/lib/services/admin";
 import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
+import { AdminLiquidateTransactionButton } from "@/components/admin/AdminLiquidateTransactionButton";
 import { TransactionStatus } from "@/generated/prisma/client";
 import { formatDateTime, shortId } from "@/lib/format";
 import { formatARS } from "@/lib/money";
@@ -99,15 +99,10 @@ export function AdminTransactionsTable({
                 <td className="px-5 py-4">
                   <AdminStatusBadge status={transaction.status} />
                   {transaction.status === TransactionStatus.RESERVED ? (
-                    <form action={liquidateAdminTransaction} className="mt-2">
-                      <input type="hidden" name="transactionId" value={transaction.id} />
-                      <button
-                        type="submit"
-                        className="rounded-full border border-success/20 bg-success/10 px-3 py-1.5 text-xs font-semibold text-success transition hover:bg-success/15"
-                      >
-                        Liquidar
-                      </button>
-                    </form>
+                    <AdminLiquidateTransactionButton
+                      transactionId={transaction.id}
+                      className="mt-2"
+                    />
                   ) : null}
                 </td>
                 <td className="whitespace-nowrap px-5 py-4 font-mono text-xs text-muted">
@@ -146,15 +141,7 @@ export function AdminTransactionsTable({
               </div>
             </div>
             {transaction.status === TransactionStatus.RESERVED ? (
-              <form action={liquidateAdminTransaction}>
-                <input type="hidden" name="transactionId" value={transaction.id} />
-                <button
-                  type="submit"
-                  className="rounded-full border border-success/20 bg-success/10 px-3 py-1.5 text-xs font-semibold text-success transition hover:bg-success/15"
-                >
-                  Liquidar
-                </button>
-              </form>
+              <AdminLiquidateTransactionButton transactionId={transaction.id} />
             ) : null}
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
               <span>{formatDateTime(transaction.createdAt)}</span>
