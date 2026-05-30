@@ -13,6 +13,7 @@ import {
   getDriverEarnedThisMonth,
   getDriverIncomeChart,
 } from "@/lib/services/liquidations";
+import { getDriverAppUrl } from "@/lib/driver-app-url";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,7 @@ export default function DriverDashboardPage() {
   // Disparamos la query una sola vez y compartimos la misma promesa entre secciones.
   // Como no usamos await acá, la página puede renderizar los skeletons enseguida.
   const userPromise = getCurrentDriverWithBalance();
+  const driverAppUrl = getDriverAppUrl();
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-8 animate-fade-in">
@@ -29,6 +31,17 @@ export default function DriverDashboardPage() {
       <Suspense fallback={<DriverHeaderSkeleton />}>
         <DriverDashboardHeader userPromise={userPromise} />
       </Suspense>
+
+      {driverAppUrl ? (
+        <div className="flex justify-start">
+          <a
+            href={driverAppUrl}
+            className="inline-flex items-center justify-center rounded-md border border-border px-5 py-3 text-sm font-semibold text-foreground transition-all hover:border-accent/40 hover:bg-white/5"
+          >
+            Volver a Driver App
+          </a>
+        </div>
+      ) : null}
 
       {/* Balance: depende del trabajador y su Balance 1:1 del schema. */}
       <Suspense fallback={<BalanceCardsSkeleton />}>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Prisma } from "@/generated/prisma/client";
 import type { CheckoutResultData, CheckoutResultKind } from "@/lib/services/rider-checkout";
+import { getRiderAppUrl } from "@/lib/rider-app-url";
 
 type CheckoutResultViewProps = {
   kind: CheckoutResultKind;
@@ -59,12 +60,6 @@ function toDecimalParts(value: Prisma.Decimal | string) {
 function formatARS(value: Prisma.Decimal | string) {
   const { integer, fraction } = toDecimalParts(value);
   return `$ ${integer},${fraction}`;
-}
-
-function getRiderAppUrl() {
-  const riderAppUrl = process.env.NEXT_PUBLIC_RIDER_APP_URL?.trim().replace(/\/+$/, "");
-
-  return riderAppUrl || null;
 }
 
 function ResultEmptyState({ copy }: { copy: ResultCopy }) {
