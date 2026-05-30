@@ -45,7 +45,7 @@ export function PaymentActionSection({
         {transaction?.gatewayCheckoutUrl ? (
           <a
             href={transaction.gatewayCheckoutUrl}
-            className="inline-flex w-full items-center justify-center rounded-md bg-accent px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-accent-hover hover:shadow-[0_0_20px_rgba(245,0,241,0.25)]"
+            className="inline-flex w-full items-center justify-center rounded-md bg-accent px-6 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover hover:shadow-[0_0_20px_rgba(245,0,241,0.25)]"
           >
             Confirmar e ir a pagar
           </a>
