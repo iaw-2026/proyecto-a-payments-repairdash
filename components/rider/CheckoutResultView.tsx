@@ -93,7 +93,7 @@ function ResultEmptyState({ copy }: { copy: ResultCopy }) {
             ) : null}
             <Link
               href="/rider"
-              className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2.5 text-xs font-semibold text-white transition-all hover:bg-accent-hover hover:shadow-[0_0_20px_rgba(245,0,241,0.25)] sm:px-5 sm:py-3 sm:text-sm"
+              className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2.5 text-xs font-semibold text-accent-foreground transition-all hover:bg-accent-hover hover:shadow-[0_0_20px_rgba(245,0,241,0.25)] sm:px-5 sm:py-3 sm:text-sm"
             >
               Volver al inicio
             </Link>
@@ -202,7 +202,7 @@ function CheckoutSummaryResult({
           ) : null}
           <Link
             href="/rider"
-            className="inline-flex w-full items-center justify-center rounded-md bg-accent px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-accent-hover hover:shadow-[0_0_20px_rgba(245,0,241,0.25)] md:w-auto"
+            className="inline-flex w-full items-center justify-center rounded-md bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover hover:shadow-[0_0_20px_rgba(245,0,241,0.25)] md:w-auto"
           >
             Volver al inicio
           </Link>
