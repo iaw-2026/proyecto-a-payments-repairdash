@@ -29,8 +29,17 @@ export default function DriverDashboardPage() {
     <div className="mx-auto w-full max-w-5xl space-y-8 animate-fade-in">
       {/* Header: muestra el saludo cuando llega el user. */}
       <Suspense fallback={<DriverHeaderSkeleton />}>
-        <DriverDashboardHeader userPromise={userPromise} />
+        <DriverDashboardHeader
+          userPromise={userPromise}
+          driverAppUrl={driverAppUrl}
+        />
       </Suspense>
+
+      {driverAppUrl ? (
+        <div className="lg:hidden">
+          <DriverAppReturnButton driverAppUrl={driverAppUrl} />
+        </div>
+      ) : null}
 
       {/* Balance: depende del trabajador y su Balance 1:1 del schema. */}
       <Suspense fallback={<BalanceCardsSkeleton />}>
@@ -44,32 +53,9 @@ export default function DriverDashboardPage() {
         </Suspense>
 
         {/* Acción rápida: necesita el balance disponible para abrir el modal de retiro. */}
-        <div className="space-y-3">
-          {driverAppUrl ? (
-            <a
-              href={driverAppUrl}
-              className="inline-flex w-full items-center justify-center rounded-md bg-accent px-6 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover hover:shadow-[0_0_20px_rgba(245,0,241,0.25)]"
-            >
-              Volver a Driver App
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="ml-2 h-4 w-4"
-                aria-hidden="true"
-              >
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </a>
-          ) : null}
-
-          <Suspense fallback={<QuickWithdrawalActionSkeleton />}>
-            <DriverWithdrawalSection userPromise={userPromise} />
-          </Suspense>
-        </div>
+        <Suspense fallback={<QuickWithdrawalActionSkeleton />}>
+          <DriverWithdrawalSection userPromise={userPromise} />
+        </Suspense>
       </div>
     </div>
   );
@@ -77,22 +63,55 @@ export default function DriverDashboardPage() {
 
 async function DriverDashboardHeader({
   userPromise,
+  driverAppUrl,
 }: {
   userPromise: DriverUserPromise;
+  driverAppUrl: string | null;
 }) {
   // Esta sección suspende hasta que resuelve userPromise; mientras tanto se ve DriverHeaderSkeleton.
   const user = await userPromise;
 
   return (
-    <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.25em] text-muted">
-        Dashboard
-      </p>
-      <h1 className="mt-2 text-3xl font-bold text-foreground">
-        {user ? `Hola, ${user.fullName}` : "Dashboard del driver"}
-      </h1>
-      <p className="mt-1 text-secondary">Resumen financiero de tu cuenta.</p>
+    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-muted">
+          Dashboard
+        </p>
+        <h1 className="mt-2 text-3xl font-bold text-foreground">
+          {user ? `Hola, ${user.fullName}` : "Dashboard del driver"}
+        </h1>
+        <p className="mt-1 text-secondary">Resumen financiero de tu cuenta.</p>
+      </div>
+
+      {driverAppUrl ? (
+        <div className="hidden lg:block">
+          <DriverAppReturnButton driverAppUrl={driverAppUrl} />
+        </div>
+      ) : null}
     </div>
+  );
+}
+
+function DriverAppReturnButton({ driverAppUrl }: { driverAppUrl: string }) {
+  return (
+    <a
+      href={driverAppUrl}
+      className="inline-flex w-full items-center justify-center rounded-md bg-accent px-6 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover hover:shadow-[0_0_20px_rgba(245,0,241,0.25)] lg:w-auto"
+    >
+      Volver a Driver App
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="ml-2 h-4 w-4"
+        aria-hidden="true"
+      >
+        <path d="M5 12h14M12 5l7 7-7 7" />
+      </svg>
+    </a>
   );
 }
 
