@@ -24,7 +24,7 @@ export default function DriverDashboardPage() {
   const userPromise = getCurrentDriverWithBalance();
 
   return (
-    <div className="max-w-5xl space-y-8 animate-fade-in">
+    <div className="mx-auto w-full max-w-5xl space-y-8 animate-fade-in">
       {/* Header: muestra el saludo cuando llega el user. */}
       <Suspense fallback={<DriverHeaderSkeleton />}>
         <DriverDashboardHeader userPromise={userPromise} />

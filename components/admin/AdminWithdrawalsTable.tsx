@@ -1,5 +1,5 @@
-import { approveAdminWithdrawal } from "@/app/actions/admin";
 import type { AdminWithdrawalItem } from "@/lib/services/admin";
+import { AdminApproveWithdrawalButton } from "@/components/admin/AdminApproveWithdrawalButton";
 import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
 import { WithdrawalStatus } from "@/generated/prisma/client";
 import { formatDateTime, shortId } from "@/lib/format";
@@ -77,15 +77,7 @@ export function AdminWithdrawalsTable({
                 </td>
                 <td className="whitespace-nowrap px-5 py-4 text-right">
                   {withdrawal.status === WithdrawalStatus.REQUESTED ? (
-                    <form action={approveAdminWithdrawal}>
-                      <input type="hidden" name="withdrawalId" value={withdrawal.id} />
-                      <button
-                        type="submit"
-                        className="rounded-full border border-success/20 bg-success/10 px-3 py-1.5 text-xs font-semibold text-success transition hover:bg-success/15"
-                      >
-                        Aprobar
-                      </button>
-                    </form>
+                    <AdminApproveWithdrawalButton withdrawalId={withdrawal.id} />
                   ) : null}
                 </td>
               </tr>
@@ -114,15 +106,7 @@ export function AdminWithdrawalsTable({
               </div>
             </div>
             {withdrawal.status === WithdrawalStatus.REQUESTED ? (
-              <form action={approveAdminWithdrawal}>
-                <input type="hidden" name="withdrawalId" value={withdrawal.id} />
-                <button
-                  type="submit"
-                  className="rounded-full border border-success/20 bg-success/10 px-3 py-1.5 text-xs font-semibold text-success transition hover:bg-success/15"
-                >
-                  Aprobar
-                </button>
-              </form>
+              <AdminApproveWithdrawalButton withdrawalId={withdrawal.id} />
             ) : null}
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
               <span>{formatDateTime(withdrawal.createdAt)}</span>
