@@ -32,17 +32,6 @@ export default function DriverDashboardPage() {
         <DriverDashboardHeader userPromise={userPromise} />
       </Suspense>
 
-      {driverAppUrl ? (
-        <div className="flex justify-start">
-          <a
-            href={driverAppUrl}
-            className="inline-flex items-center justify-center rounded-md border border-border px-5 py-3 text-sm font-semibold text-foreground transition-all hover:border-accent/40 hover:bg-white/5"
-          >
-            Volver a Driver App
-          </a>
-        </div>
-      ) : null}
-
       {/* Balance: depende del trabajador y su Balance 1:1 del schema. */}
       <Suspense fallback={<BalanceCardsSkeleton />}>
         <DriverBalanceSection userPromise={userPromise} />
@@ -55,9 +44,32 @@ export default function DriverDashboardPage() {
         </Suspense>
 
         {/* Acción rápida: necesita el balance disponible para abrir el modal de retiro. */}
-        <Suspense fallback={<QuickWithdrawalActionSkeleton />}>
-          <DriverWithdrawalSection userPromise={userPromise} />
-        </Suspense>
+        <div className="space-y-3">
+          {driverAppUrl ? (
+            <a
+              href={driverAppUrl}
+              className="inline-flex w-full items-center justify-center rounded-md bg-accent px-6 py-3 text-sm font-semibold text-accent-foreground transition-all hover:bg-accent-hover hover:shadow-[0_0_20px_rgba(245,0,241,0.25)]"
+            >
+              Volver a Driver App
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="ml-2 h-4 w-4"
+                aria-hidden="true"
+              >
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </a>
+          ) : null}
+
+          <Suspense fallback={<QuickWithdrawalActionSkeleton />}>
+            <DriverWithdrawalSection userPromise={userPromise} />
+          </Suspense>
+        </div>
       </div>
     </div>
   );
