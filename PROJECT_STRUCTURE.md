@@ -124,7 +124,7 @@ interface DashboardData {
 
 ### `lib/services/` - Logica de dominio y datos
 
-Esta carpeta no contiene solo queries Prisma. Hoy mezcla logica de dominio, transacciones Prisma, calculos con `Prisma.Decimal`, timers locales, cache server-side, auth helper y algunas llamadas a integraciones.
+Esta carpeta  contiene las queries a Prisma. 
 
 | Archivo | Responsabilidad actual |
 |---|---|
@@ -160,11 +160,10 @@ Servicios que llaman integraciones externas:
 | `rider-callback.ts` | Envia callback HTTP `PUT` a Rider App con reintentos. Usa `RIDER_PAYMENT_CALLBACK_URL` y `REPAIRDASH_API_KEY` o `RIDER_CALLBACK_API_KEY`. |
 | `index.ts` | Barrel exports. |
 
-Nota tecnica: revisar `unit_price: Number(decimalAmount)` en `mercadopago.ts` si se quiere aplicar estrictamente la regla de no convertir montos a `number`.
+
 
 ### `lib/auth.ts` - Auth
-
-La autenticacion ya no es mock. Usa `@clerk/nextjs/server` y consulta `User` en Prisma para resolver roles:
+ Usa `@clerk/nextjs/server` y consulta `User` en Prisma para resolver roles:
 
 - `rider`
 - `driver`
@@ -268,57 +267,3 @@ Actuan como puente entre UI, auth, validaciones, services y revalidacion de ruta
 - `/admin/drivers`: trabajadores con composicion `Trabajador` + `Balance`.
 - `/admin/riders`: clientes con volumen pagado y actividad reciente.
 
-No hay pantalla admin de disputas en el MVP.
-
-## Reglas de Datos
-
-- `prisma/schema.prisma` manda sobre nombres, relaciones y tipos.
-- No crear interfaces espejo de modelos Prisma.
-- Usar tipos generados desde `@/generated/prisma/client`.
-- No aplanar `Trabajador` y `Balance`; usar composicion.
-- No calcular dinero con `number`; mantener `Prisma.Decimal`.
-- Campos dinamicos como `earnedThisMonth` deben salir de agregaciones y llevar comentario `// TODO: Dato calculado mediante agregacion`.
-- Usar nombres reales del schema: `balanceAvailable`, `balanceLocked`, `Trabajador.cbuCvu`, etc.
-
-## Variables de Entorno Relevantes
-
-```env
-DATABASE_URL="postgresql://..."
-CLERK_SECRET_KEY="..."
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="..."
-MERCADO_PAGO_ACCESS_TOKEN="TEST-..."
-APP_URL="https://tu-url-publica.ngrok-free.dev"
-PAYMENTS_INTERNAL_API_KEY="..."
-RIDER_PAYMENT_CALLBACK_URL="https://rider-app/api/payments/result"
-REPAIRDASH_API_KEY="..."
-RIDER_CALLBACK_API_KEY="..."
-NEXT_PUBLIC_RIDER_APP_URL="https://rider-app"
-```
-
-## Tests y Scripts
-
-Scripts principales:
-
-```bash
-pnpm dev
-pnpm build
-pnpm db:deploy
-pnpm lint
-```
-
-Tests presentes:
-
-- `tests/balances.test.ts`
-- `tests/disputes.test.ts`
-- `tests/income-chart.test.ts`
-- `tests/transactions.test.ts`
-- `tests/validations.test.ts`
-
-Nota: no hay script `test` declarado en `package.json` actualmente.
-
-## Pendientes Documentales / Tecnicos
-
-- Revisar conversion a `number` en `lib/integrations/mercadopago.ts`.
-- Definir si `lib/services/index.ts` debe exportar todos los services o solo los tres actuales.
-- Evaluar si conviene separar services autenticados de services puros para que la frontera de auth quede mas clara.
-- Agregar script de tests si la suite debe ejecutarse desde `package.json`.

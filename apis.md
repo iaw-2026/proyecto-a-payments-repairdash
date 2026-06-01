@@ -288,7 +288,7 @@ Cuando el request no llega como `application/json`.
 }
 ```
 
-## 3. Callback de Resultado Hacia Rider App
+## 3. Callback de Resultado Hacia Rider App (mock que ya no es utilizado, fue reemplazado por llamado real)
 
 **Endpoint:** definido por Rider App y configurado en Payments como `RIDER_PAYMENT_CALLBACK_URL`.
 

@@ -52,7 +52,7 @@ export function PendingPaymentSection({
             Servicio de reparacion
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-secondary">
-            Revisa el detalle antes de continuar a Mercado Pago. La confirmacion final llega por webhook.
+            Revisa el detalle antes de continuar a Mercado Pago. Te vamos a mostrar el resultado cuando se confirme el pago.
           </p>
         </div>
         <RiderStatusBadge status={transaction.status} />
