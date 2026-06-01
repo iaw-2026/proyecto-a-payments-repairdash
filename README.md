@@ -74,12 +74,12 @@ Un driver iniciará sesión y podrá hacer retiros, ver sus balances y  sus liqu
 a Payments app a través de un PUT para que cambie el estado del pago a failed impidiendo que sea pagado en MercadoPago.
 4.  Si el usuario rompiera el flujo de redirección, no pasa nada porque paymentsApp levanta el último pago pendiente si no hay un id en la url. Es imposible que un usuario tenga dos pagos pendientes realmente, porque rider App no permite tener más de un pedido activo, si se puede si se enviaran peticiones mediante postman.
 5. Al pagar, Mercado Pago notifica a Payments por webhook.
-6. Payments actualiza la transaccion, mueve el saldo del trabajador y avisa el resultado a Rider App mediante callback.
+6. Payments actualiza la transaccion, mueve el saldo del trabajador y avisa el resultado a Rider App mediante callback (put).
 7. El resultado se puede revisar desde el panel de rider, driver o administrador segun corresponda.
 
 ### Prueba manual desde Postman
 
-Tambien se puede iniciar un pago sin pasar por Rider App llamando directamente al endpoint interno:
+Tambien se puede iniciar un pago sin pasar por Rider App llamando directamente al endpoint interno, pero es recomedable y más fácil probar el flujo completo.
 
 ```http
 POST https://proyecto-a-payments-repairdash.vercel.app/api/payments/checkout
@@ -151,3 +151,6 @@ codigo de verificacion: 439411
 
 Si se desea fallar un pago usar tarjeta mastercard terminada en 3304 con codigo de seguridad 123, 
 para pagar correctamente usar dinero en cuenta o tarjeta mastercard terminada en 4602 con codigo 123.
+
+## Lighthouse
+Se corrieron los test durante todo el desarrollo, buscando el máximo posible en accesibilidad y rendimiento. Este último, disminuye en mobile version por características del test. Luego el SEO intentó ser mejorado pero al estar todo bloqueado por clerk no se logró subir su nota salvo en la landing page que es de 100, lo mismo ocurre con Recomendaciones debido a clerk.

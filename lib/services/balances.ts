@@ -5,6 +5,12 @@
 
 import { prisma } from "@/lib/prisma";
 import { Prisma, TransactionStatus } from "@/generated/prisma/client";
+import {
+  calculateAvailableBalance,
+  calculateBalanceTotal,
+  calculateLockedBalance,
+  type BalanceOperation,
+} from "@/lib/balance-math";
 
 const BUENOS_AIRES_UTC_OFFSET_HOURS = -3;
 
@@ -93,8 +99,8 @@ export async function getWorkerWalletSummary(
 
 export async function updateAvailableBalance(
   trabajadorId: string,
-  amount: Prisma.Decimal | number,
-  operation: "add" | "subtract"
+  amount: Prisma.Decimal | string,
+  operation: BalanceOperation,
 ) {
   const currentBalance = await getBalanceByWorker(trabajadorId);
 
@@ -102,16 +108,11 @@ export async function updateAvailableBalance(
     throw new Error("Balance not found for worker");
   }
 
-  // Use Decimal arithmetic to avoid floating point issues (Rule 3)
-  const decimalAmount = new Prisma.Decimal(amount);
-  const newAmount =
-    operation === "add"
-      ? currentBalance.balanceAvailable.plus(decimalAmount)
-      : currentBalance.balanceAvailable.minus(decimalAmount);
-
-  if (newAmount.lessThan(0)) {
-    throw new Error("Insufficient balance");
-  }
+  const newAmount = calculateAvailableBalance(
+    currentBalance.balanceAvailable,
+    amount,
+    operation,
+  );
 
   const updated = await prisma.balance.update({
     where: { trabajadorId },
@@ -125,8 +126,8 @@ export async function updateAvailableBalance(
 
 export async function updateLockedBalance(
   trabajadorId: string,
-  amount: Prisma.Decimal | number,
-  operation: "add" | "subtract"
+  amount: Prisma.Decimal | string,
+  operation: BalanceOperation,
 ) {
   const currentBalance = await getBalanceByWorker(trabajadorId);
 
@@ -134,16 +135,11 @@ export async function updateLockedBalance(
     throw new Error("Balance not found for worker");
   }
 
-  // Use Decimal arithmetic to avoid floating point issues (Rule 3)
-  const decimalAmount = new Prisma.Decimal(amount);
-  const newAmount =
-    operation === "add"
-      ? currentBalance.balanceLocked.plus(decimalAmount)
-      : currentBalance.balanceLocked.minus(decimalAmount);
-
-  if (newAmount.lessThan(0)) {
-    throw new Error("Cannot reduce locked balance below zero");
-  }
+  const newAmount = calculateLockedBalance(
+    currentBalance.balanceLocked,
+    amount,
+    operation,
+  );
 
   const updated = await prisma.balance.update({
     where: { trabajadorId },
@@ -165,7 +161,6 @@ export async function getTotalBalance(trabajadorId: string) {
   return {
     available: balance.balanceAvailable,
     locked: balance.balanceLocked,
-    total: balance.balanceAvailable.plus(balance.balanceLocked),
+    total: calculateBalanceTotal(balance),
   };
 }
-

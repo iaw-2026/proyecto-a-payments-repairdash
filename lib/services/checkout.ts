@@ -14,7 +14,12 @@ import {
   invalidateDriverIncomeCache,
   waitAndRunPendingLiquidations,
 } from "@/lib/services/liquidations";
-import type { RiderPaymentCallbackPayload, RiderPaymentEstado } from "@/lib/types/payment-callback";
+import {
+  mapMercadoPagoStatusToTransactionStatus,
+  mapTransactionStatusToRiderEstado,
+  resolveNextTransactionStatus,
+} from "@/lib/payment-status";
+import type { RiderPaymentCallbackPayload } from "@/lib/types/payment-callback";
 import type { CheckoutInput } from "@/lib/validations/checkout";
 import { validateCancelCheckout, validateCheckout } from "@/lib/validations/checkout";
 import type { PaymentResponse } from "mercadopago/dist/clients/payment/commonTypes";
@@ -247,49 +252,6 @@ export async function cancelCheckout(inputData: unknown): Promise<CancelCheckout
       ? getCheckoutCancellationOutcome(currentTransaction.status)
       : "not_found",
   };
-}
-
-export function mapMercadoPagoStatusToTransactionStatus(status: string | undefined) {
-  if (status === "approved") return TransactionStatus.RESERVED;
-  if (status === "rejected" || status === "cancelled") return TransactionStatus.FAILED;
-  if (status === "refunded" || status === "charged_back") return TransactionStatus.REFUNDED;
-  return TransactionStatus.PENDING;
-}
-
-function resolveNextTransactionStatus(
-  currentStatus: TransactionStatus,
-  nextStatus: TransactionStatus,
-  liquidatedAt: Date | null,
-) {
-  if (currentStatus === TransactionStatus.FAILED) {
-    return TransactionStatus.FAILED;
-  }
-
-  if (currentStatus === TransactionStatus.RESERVED && liquidatedAt && nextStatus === TransactionStatus.RESERVED) {
-    return TransactionStatus.LIQUIDATED;
-  }
-
-  if (
-    currentStatus === TransactionStatus.LIQUIDATED &&
-    (nextStatus === TransactionStatus.RESERVED || nextStatus === TransactionStatus.PENDING)
-  ) {
-    return TransactionStatus.LIQUIDATED;
-  }
-
-  if (
-    currentStatus === TransactionStatus.RESERVED &&
-    nextStatus === TransactionStatus.PENDING
-  ) {
-    return TransactionStatus.RESERVED;
-  }
-
-  return nextStatus;
-}
-
-export function mapTransactionStatusToRiderEstado(status: TransactionStatus): RiderPaymentEstado | null {
-  if (status === TransactionStatus.RESERVED || status === TransactionStatus.LIQUIDATED) return "aceptado";
-  if (status === TransactionStatus.FAILED || status === TransactionStatus.REFUNDED) return "rechazado";
-  return null;
 }
 
 function isDriverIncomeStatus(status: TransactionStatus) {
