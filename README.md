@@ -4,7 +4,7 @@ Modulo de pagos de Repairdash, una aplicacion web orientada a gestionar cobros d
 
 Proyecto desarrollado en Next.js para la materia Ingenieria de Aplicaciones Web - UNS, 2026.
 
-Para mayor información sobre las apis se puede consultar apis.md o la etapa 1 y para mayor información del backend se puede consultar PROJECT_STRUCTURE.MD
+Para mayor información sobre las apis se puede consultar [apis.md](apis.md) o la etapa 1 y para mayor información del backend se puede consultar [PROJECT_STRUCTURE.MD](PROJECT_STRUCTURE.md)
 
 ## Deploy
 https://proyecto-a-payments-repairdash.vercel.app
@@ -69,7 +69,7 @@ Un driver iniciará sesión y podrá hacer retiros, ver sus balances y  sus liqu
 
 1. Iniciar sesion en Rider App con una cuenta habilitada.
 2. Crear o seleccionar un trabajo que requiera pago.
-3. Rider App llama a Payments para crear el checkout.
+3. Rider App llama a Payments para crear el checkout. (Asegurarse previamente de no estar logeado en paymentsApp o estarlo pero con la cuenta con rol rider, sino la redirección funciona pero no te deja pagar porque te muestra la vista del rol que tenés).
 4. El usuario es redirigido a Payments y luego a Mercado Pago. Si no pago todavía puede cancelar el checkout y rider app le avisa
 a Payments app a través de un PUT para que cambie el estado del pago a failed impidiendo que sea pagado en MercadoPago.
 4.  Si el usuario rompiera el flujo de redirección, no pasa nada porque paymentsApp levanta el último pago pendiente si no hay un id en la url. Es imposible que un usuario tenga dos pagos pendientes realmente, porque rider App no permite tener más de un pedido activo, si se puede si se enviaran peticiones mediante postman.
@@ -79,7 +79,7 @@ a Payments app a través de un PUT para que cambie el estado del pago a failed i
 
 ### Prueba manual desde Postman
 
-Tambien se puede iniciar un pago sin pasar por Rider App llamando directamente al endpoint interno, pero es recomedable y más fácil probar el flujo completo.
+Tambien se puede iniciar un pago sin pasar por Rider App llamando directamente al endpoint interno, pero es recomedable y más fácil probar el flujo completo. Además se deberá solicitar la API KEY.
 
 ```http
 POST https://proyecto-a-payments-repairdash.vercel.app/api/payments/checkout
@@ -111,17 +111,6 @@ x-internal-api-key: <PAYMENTS_INTERNAL_API_KEY>
 Importante: `clientId` y `trabajadorId` deben existir en Payments, y el monto debe enviarse como string decimal.
 
 
-
-## Scripts utiles
-
-```bash
-pnpm dev        # Iniciar servidor de desarrollo
-pnpm build      # Compilar para produccion
-pnpm start      # Iniciar servidor de produccion
-pnpm db:deploy  # Ejecutar migraciones en deploy
-pnpm lint       # Ejecutar ESLint
-```
-
 ## Accesos
 
 El login se realiza desde `/sign-in`. La autenticacion usa Clerk y la app redirige automaticamente segun el rol del usuario.
@@ -137,8 +126,17 @@ Roles disponibles:
 | Rider / usuario final | Cuenta habilitada con rol `rider` |
 
 ## Usuario admin:
-mail: pruebaadminp+clerk_test@gmail.com
-contraseña: adminPayments1234
+mail: adminpayments+clerk_test@iaw.com
+contraseña: iawuser#
+
+## Usuario driver: (el mismo es utilizado por driverApp para tener mas transacciones cargadas)
+mail: driver+clerk_test@iaw.com
+contraseña: iawuser#
+
+## Usuario rider: (el mismo es utilizado por riderApp para tener mas transacciones cargadas)
+mail: rider+clerk_test@iaw.com
+contraseña: iawuser#
+
 
 
 ## cuenta de mercado pago de test para comprar:
