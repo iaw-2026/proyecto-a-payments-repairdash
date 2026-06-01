@@ -25,18 +25,6 @@ La aplicacion centraliza el flujo financiero del ecosistema Repairdash:
 - Solicitud y aprobacion de retiros.
 - Panel administrativo para transacciones, trabajadores, riders y retiros.
 
-## Enfoque arquitectonico
-
-El proyecto usa Next.js App Router, Clerk para autenticacion, Prisma como capa de datos y PostgreSQL como base de datos.
-
-Organizacion principal:
-
-- `app/`: paginas, layouts, server actions y API routes.
-- `components/`: componentes de interfaz para admin, driver, rider y UI reutilizable.
-- `lib/services/`: logica de negocio de balances, checkout, liquidaciones, retiros y administracion.
-- `lib/integrations/`: integracion con Mercado Pago y callbacks hacia Rider App.
-- `prisma/`: schema y migraciones de base de datos.
-
 ## Flujos principales
 
 ### Pago de rider
@@ -79,36 +67,7 @@ a Payments app a través de un PUT para que cambie el estado del pago a failed i
 
 ### Prueba manual desde Postman
 
-Tambien se puede iniciar un pago sin pasar por Rider App llamando directamente al endpoint interno, pero es recomedable y más fácil probar el flujo completo. Además se deberá solicitar la API KEY.
-
-```http
-POST https://proyecto-a-payments-repairdash.vercel.app/api/payments/checkout
-content-type: application/json
-x-internal-api-key: <PAYMENTS_INTERNAL_API_KEY>
-```
-
-Body de ejemplo:
-
-```json
-{
-  "trabajoId": "trabajo_demo_001",
-  "clientId": "<CLERK_ID_RIDER>",
-  "trabajadorId": "<CLERK_ID_DRIVER>",
-  "amount": "15000.50",
-  "description": "Servicio de reparacion"
-}
-```
-
-La respuesta devuelve un `redirectUrl`. Para continuar la prueba, abrir esa URL en el navegador con una sesion de rider iniciada y completar el pago en Mercado Pago.
-
-Para consultar la wallet de un trabajador desde Postman:
-
-```http
-GET https://proyecto-a-payments-repairdash.vercel.app/api/payments/wallet/<CLERK_ID_DRIVER>
-x-internal-api-key: <PAYMENTS_INTERNAL_API_KEY>
-```
-
-Importante: `clientId` y `trabajadorId` deben existir en Payments, y el monto debe enviarse como string decimal.
+Tambien se puede iniciar un pago sin pasar por Rider App llamando directamente al endpoint interno, pero es recomedable y más fácil probar el flujo completo. Además se deberá solicitar la API KEY. Para mirar la documentacion de las apis mirar [apis.md](apis.md) 
 
 
 ## Accesos
@@ -136,7 +95,6 @@ contraseña: iawuser#
 ## Usuario rider: (el mismo es utilizado por riderApp para tener mas transacciones cargadas)
 mail: rider+clerk_test@iaw.com
 contraseña: iawuser#
-
 
 
 ## cuenta de mercado pago de test para comprar:
