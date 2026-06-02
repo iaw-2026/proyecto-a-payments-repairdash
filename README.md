@@ -27,6 +27,8 @@ La aplicacion centraliza el flujo financiero del ecosistema Repairdash:
 
 ## Flujos principales
 
+La app ya se encuentra conectada con todas las APIs reales, se dejo el mock para ver como fue el desarrollo. Se conectó con riderApp y driverApp consume un GET. Por esta razón conviene probar los casos de uso con los flujos reales.
+
 ### Pago de rider
 
 Repairdash/Rider App solicita un checkout interno. Payments crea o reutiliza una transaccion pendiente, genera la preferencia en Mercado Pago y expone el link de pago al rider. Si un pago falla, se avisa a riderApp a traves del PUT y se cancela el trabajo, por decisión de RiderApp.
@@ -53,11 +55,11 @@ El administrador podra modificar la comisión de liquidación cobrada a los driv
 ### Flujo completo vista driver
 Un driver iniciará sesión y podrá hacer retiros, ver sus balances y  sus liquidaciones.
 
-### Flujo completo con Rider App
+### Flujo completo con Rider App (aclaraciones necesarias para testearlo)
 
 1. Iniciar sesion en Rider App con una cuenta habilitada.
 2. Crear o seleccionar un trabajo que requiera pago.
-3. Rider App llama a Payments para crear el checkout. (Asegurarse previamente de no estar logeado en paymentsApp o estarlo pero con la cuenta con rol rider, sino la redirección funciona pero no te deja pagar porque te muestra la vista del rol que tenés).
+3. Rider App llama a Payments para crear el checkout. (Asegurarse previamente de no estar logeado en paymentsApp o estarlo pero con la cuenta con rol rider desde la que se pide el trabajo, sino la redirección funciona pero no te deja pagar porque te muestra la vista del rol que tenés, o si estas en otra cuenta rider no te muestra el pago correspondiente).
 4. El usuario es redirigido a Payments y luego a Mercado Pago. Si no pago todavía puede cancelar el checkout y rider app le avisa
 a Payments app a través de un PUT para que cambie el estado del pago a failed impidiendo que sea pagado en MercadoPago.
 4.  Si el usuario rompiera el flujo de redirección, no pasa nada porque paymentsApp levanta el último pago pendiente si no hay un id en la url. Es imposible que un usuario tenga dos pagos pendientes realmente, porque rider App no permite tener más de un pedido activo, si se puede si se enviaran peticiones mediante postman.
@@ -74,7 +76,7 @@ Tambien se puede iniciar un pago sin pasar por Rider App llamando directamente a
 
 El login se realiza desde `/sign-in`. La autenticacion usa Clerk y la app redirige automaticamente segun el rol del usuario.
 La app no permite crear usuarios, estos se deben crear desde sus aplicaciones principales, esto es para no generar inconsistencias.
-
+Los roles son los asignados en clerk y luego se guardan y chequean en la BD.
 
 Roles disponibles:
 
@@ -105,8 +107,20 @@ contraseña: asUVHQxXZS
 
 codigo de verificacion: 439411
 
-Si se desea fallar un pago usar tarjeta mastercard terminada en 3304 con codigo de seguridad 123, 
-para pagar correctamente usar dinero en cuenta o tarjeta mastercard terminada en 4602 con codigo 123.
+Para probar pagos se puede usar el dinero en cuenta o:
+
+| Tipo | Numero | Codigo | Vencimiento | DNI |
+| --- | --- | --- | --- | --- |
+| Mastercard credito | 5031 7557 3453 0604 | 123 | 11/30 | 1234567 |
+| Mastercard debito | 5287 3383 1025 3304 | 123 | 11/30 | 1234567 |
+
+Para probar resultados, completar el nombre del titular con:
+
+| Resultado esperado | Nombre del titular |
+| --- | --- |
+| Aprobado | APRO |
+| Rechazado | OTHE, FUND o EXPI |
+| Pendiente | CONT |
 
 ## Lighthouse
 Se corrieron los test durante todo el desarrollo, buscando el máximo posible en accesibilidad y rendimiento. Este último, disminuye en mobile version por características del test. Luego el SEO intentó ser mejorado pero al estar todo bloqueado por clerk no se logró subir su nota salvo en la landing page que es de 100, lo mismo ocurre con Recomendaciones debido a clerk.
