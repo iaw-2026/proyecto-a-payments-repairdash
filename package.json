@@ -11,7 +11,8 @@
     "db:deploy": "prisma migrate deploy",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test tests/*.test.ts"
+    "test": "tsx --test tests/*.test.ts",
+    "test:control-plane-api": "node scripts/smoke-control-plane.mjs"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.3.3",
