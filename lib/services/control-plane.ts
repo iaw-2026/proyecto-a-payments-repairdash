@@ -229,7 +229,13 @@ export async function getControlPlaneSummary(now = new Date()) {
         status: true,
       },
     }),
-    prisma.cliente.count(),
+    prisma.cliente.count({
+      where: {
+        user: {
+          role: "rider",
+        },
+      },
+    }),
     prisma.trabajador.count(),
   ]);
 

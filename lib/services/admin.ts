@@ -539,7 +539,11 @@ export async function getAdminRiders(
   const requestedPage = safePage(options.page);
   const query = normalizeQuery(filters.q);
 
-  const where: Prisma.ClienteWhereInput = {};
+  const where: Prisma.ClienteWhereInput = {
+    user: {
+      role: "rider",
+    },
+  };
 
   if (query) {
     const matchingUsers = await prisma.user.findMany({
