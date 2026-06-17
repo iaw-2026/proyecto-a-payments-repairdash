@@ -1,0 +1,16 @@
+import Link from "next/link";
+
+export default function NotFound() {
+  return (
+    <div className="mx-auto flex min-h-screen max-w-3xl items-center px-6 py-16 text-slate-100">
+      <div className="rounded-[2rem] border border-white/10 bg-slate-950/70 p-8 backdrop-blur-xl">
+        <p className="text-xs uppercase tracking-[0.3em] text-slate-400">404</p>
+        <h1 className="mt-3 text-3xl font-semibold text-white">Pagina no encontrada</h1>
+        <p className="mt-3 text-slate-300">La ruta no existe o todavia no fue creada.</p>
+        <Link href="/" className="mt-6 inline-flex rounded-full bg-cyan-300 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200">
+          Volver al inicio
+        </Link>
+      </div>
+    </div>
+  );
+}
